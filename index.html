@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colombo Court — Marketing Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Poppins',sans-serif;background:#0d0d14;min-height:100vh;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative;}
+body::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 70% 50% at 50% -10%,rgba(184,149,106,0.07) 0%,transparent 65%);}
+.grid{position:absolute;inset:0;background-image:linear-gradient(rgba(184,149,106,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(184,149,106,0.03) 1px,transparent 1px);background-size:44px 44px;}
+.box{position:relative;z-index:10;background:rgba(18,18,28,0.97);border:1px solid rgba(184,149,106,0.18);border-radius:14px;padding:44px 40px;width:400px;max-width:94vw;box-shadow:0 40px 90px rgba(0,0,0,0.55);}
+.logo{text-align:center;margin-bottom:32px;}
+.logo-icon{width:48px;height:48px;background:rgba(184,149,106,0.1);border:1px solid rgba(184,149,106,0.25);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;margin:0 auto 14px;}
+.hotel{font-size:17px;font-weight:600;color:#d4af87;letter-spacing:0.2px;}
+.dept{font-size:9.5px;color:rgba(184,149,106,0.45);letter-spacing:2.2px;text-transform:uppercase;margin-top:3px;}
+.fr{margin-bottom:14px;}
+.fr label{display:block;font-size:10px;font-weight:500;color:rgba(184,149,106,0.65);margin-bottom:5px;letter-spacing:0.8px;text-transform:uppercase;}
+.fr input{width:100%;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:7px;padding:10px 13px;font-size:13px;font-family:'Poppins',sans-serif;color:#e4dfd8;outline:none;transition:all .18s;}
+.fr input:focus{border-color:rgba(184,149,106,0.45);background:rgba(184,149,106,0.03);}
+.fr input::placeholder{color:rgba(255,255,255,0.18);}
+.btn{width:100%;padding:11px;background:linear-gradient(135deg,#b8956a,#9a7a54);border:none;border-radius:7px;color:#fff;font-size:13.5px;font-weight:600;font-family:'Poppins',sans-serif;cursor:pointer;margin-top:6px;transition:all .18s;letter-spacing:0.3px;}
+.btn:hover{background:linear-gradient(135deg,#c9a678,#b8956a);transform:translateY(-1px);}
+.btn:disabled{opacity:0.6;cursor:not-allowed;transform:none;}
+.err{background:rgba(224,85,85,0.12);border:1px solid rgba(224,85,85,0.28);color:#e07777;font-size:11.5px;padding:9px 13px;border-radius:6px;margin-top:12px;display:none;text-align:center;}
+.note{text-align:center;font-size:10px;color:rgba(255,255,255,0.15);margin-top:24px;}
+.spin{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,0.3);border-top-color:#fff;border-radius:50%;animation:sp .6s linear infinite;margin-right:6px;vertical-align:middle;}
+@keyframes sp{to{transform:rotate(360deg);}}
+</style>
+</head>
+<body>
+<div class="grid"></div>
+<div class="box">
+  <div class="logo">
+    <div class="logo-icon">🏨</div>
+    <div class="hotel">Colombo Court Hotel & Spa</div>
+    <div class="dept">Marketing Hub</div>
+  </div>
+  <div class="fr">
+    <label>Username</label>
+    <input type="text" id="usr" placeholder="Enter your username" autocomplete="username">
+  </div>
+  <div class="fr">
+    <label>Password</label>
+    <input type="password" id="pwd" placeholder="Enter your password" autocomplete="current-password"
+      onkeydown="if(event.key==='Enter')doLogin()">
+  </div>
+  <button class="btn" id="login-btn" onclick="doLogin()">Sign In →</button>
+  <div class="err" id="err"></div>
+  <div class="note">Colombo Court Hotel & Spa · Internal Use Only</div>
+</div>
+
+<script>
+const API_URL = 'https://script.google.com/macros/s/AKfycbwK9M4ZW_BvglI_Jnuc4d4gwRNOlrK7NxihaYwn_7ct4OgvRh2mwwfycTvmhQ5qs--J6Q/exec';
+
+async function doLogin() {
+  const usr = document.getElementById('usr').value.trim();
+  const pwd = document.getElementById('pwd').value;
+  const btn = document.getElementById('login-btn');
+  const err = document.getElementById('err');
+  err.style.display = 'none';
+  if (!usr || !pwd) { showErr('Please enter username and password.'); return; }
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spin"></span>Signing in...';
+  try {
+    const res = await fetch(`${API_URL}?action=login&username=${encodeURIComponent(usr)}&password=${encodeURIComponent(pwd)}`);
+    const data = await res.json();
+    if (data.ok) {
+      localStorage.setItem('cc_session', JSON.stringify({ token: data.token, username: data.user.username, role: data.user.role, loginTime: Date.now() }));
+      window.location.href = 'pages/dashboard.html';
+    } else {
+      showErr('Incorrect username or password.');
+      document.getElementById('pwd').value = '';
+    }
+  } catch(e) {
+    showErr('Cannot connect. Check your internet connection.');
+  }
+  btn.disabled = false;
+  btn.innerHTML = 'Sign In →';
+}
+
+function showErr(msg) {
+  const el = document.getElementById('err');
+  el.textContent = msg; el.style.display = 'block';
+}
+
+// Auto-redirect if already logged in
+const s = localStorage.getItem('cc_session');
+if (s) { try { if(JSON.parse(s).token) window.location.href='pages/dashboard.html'; } catch(e){} }
+</script>
+</body>
+</html>

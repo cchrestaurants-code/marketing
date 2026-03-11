@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Settings — CC Marketing Hub</title>
+<link rel="stylesheet" href="../css/main.css">
+<script src="../js/app.js"></script>
+<script src="../js/sidebar.js"></script>
+</head>
+<body>
+<div id="loader"><div class="spin"></div><div id="loader-msg">Loading...</div></div>
+<aside class="sidebar" id="sidebar"></aside>
+<main class="main">
+  <header class="topbar">
+    <div><div class="tb-title">Settings</div><div class="tb-sub">Admin only — line items, sidebar links, users & data management</div></div>
+    <div class="tb-r"><span class="fy-chip">Admin Access</span></div>
+  </header>
+  <div class="content">
+
+    <!-- LINE ITEMS -->
+    <div class="sec"><div class="sec-t">Budget Line Items</div><button class="btn btn-gold" onclick="openLIModal()">+ Add Line Item</button></div>
+    <div class="tc">
+      <table>
+        <thead><tr><th>#</th><th>Line Item</th><th>Category</th><th>Linked Module</th><th>Notes</th><th>Actions</th></tr></thead>
+        <tbody id="li-tbl"></tbody>
+      </table>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SIDEBAR CUSTOM LINKS -->
+    <div class="sec"><div class="sec-t">Sidebar Quick-Links</div><button class="btn btn-gold" onclick="openSBFModal()">+ Add Quick-Link</button></div>
+    <p style="font-size:11.5px;color:var(--text-2);margin-bottom:12px">Add links or notes that appear in the sidebar — e.g. Google Drive media kit, hotel website, brand guidelines.</p>
+    <div class="tc">
+      <table>
+        <thead><tr><th>Label</th><th>URL / Value</th><th>Type</th><th>Actions</th></tr></thead>
+        <tbody id="sbf-tbl"></tbody>
+      </table>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- USERS — managed in Google Sheets -->
+    <div class="sec"><div class="sec-t">User Management</div></div>
+    <div style="background:var(--bg-3);border:1px solid var(--border);border-radius:9px;padding:18px;margin-bottom:16px">
+      <p style="font-size:12.5px;color:var(--text-2);margin-bottom:12px">Users and passwords are managed directly in your <strong style="color:var(--gold)">Google Sheet → Users tab</strong>. To add, remove or change a user's password:</p>
+      <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:7px;padding:12px;font-size:12px;color:var(--text-2);margin-bottom:10px">
+        <div>1. Open your Google Sheet</div>
+        <div>2. Click the <strong style="color:var(--gold)">Users</strong> tab</div>
+        <div>3. Edit the <strong>username</strong>, <strong>password</strong>, or <strong>role</strong> columns</div>
+        <div>4. Set <strong>active</strong> to <code style="color:var(--green)">yes</code> or <code style="color:var(--red)">no</code></div>
+      </div>
+      <p style="font-size:11px;color:var(--text-2)">Roles: <span class="pill pb">admin</span> — full access &amp; settings &nbsp;|&nbsp; <span class="pill pgr">editor</span> — add/edit entries &nbsp;|&nbsp; <span class="pill pa">viewer</span> — read only</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- FY SETTINGS -->
+    <div class="sec"><div class="sec-t">Financial Year</div></div>
+    <div style="background:var(--bg-3);border:1px solid var(--border);border-radius:9px;padding:18px;max-width:420px">
+      <p style="font-size:12px;color:var(--text-2);margin-bottom:12px">Currently set to <strong style="color:var(--gold)">Apr 2026 – Mar 2027</strong>. To change, update the <code style="color:var(--gold)">FY = 2026</code> constant in <code style="color:var(--gold)">js/app.js</code> and redeploy to GitHub.</p>
+      <div class="fr" style="max-width:200px"><label>FY Start Year</label><input type="number" id="fy-inp" value="2026" placeholder="2026"></div>
+      <button class="btn btn-out" onclick="toast('Update FY = '+document.getElementById(\'fy-inp\').value+\' in js/app.js, then re-upload to GitHub.\',\'i\')">How to update</button>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- APPS SCRIPT URL -->
+    <div class="sec"><div class="sec-t">Google Apps Script Connection</div></div>
+    <div style="background:var(--bg-3);border:1px solid var(--border);border-radius:9px;padding:18px">
+      <p style="font-size:12.5px;color:var(--text-2);margin-bottom:12px">Your Apps Script Web App URL is set in <code style="color:var(--gold)">js/app.js</code>. To update it, edit that file in GitHub.</p>
+      <div class="fg" style="max-width:560px">
+        <div class="fr"><label>Current Apps Script URL</label><input type="text" id="api-url" placeholder="https://script.google.com/macros/s/.../exec" readonly style="opacity:.7"></div>
+      </div>
+      <button class="btn btn-out" onclick="testAPI()">Test Connection</button>
+      <div id="api-result" style="margin-top:10px;font-size:12px"></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- DATA EXPORT -->
+    <div class="sec"><div class="sec-t">Data Export</div></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-out" onclick="exportData()">⬇ Export All Data (JSON)</button>
+      <a class="btn btn-out" id="sheets-link" href="#" target="_blank" style="text-decoration:none">↗ Open Google Sheet</a>
+    </div>
+    <p style="font-size:11px;color:var(--text-2);margin-top:8px">Your data lives in Google Sheets — you can always view, export, or edit it directly there.</p>
+
+  </div>
+</main>
+
+<!-- LINE ITEM MODAL -->
+<div class="overlay" id="m-li">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-t" id="li-t">Add Line Item</div><button class="modal-x" onclick="closeM('m-li')">×</button></div>
+    <div class="modal-bd">
+      <div class="fr"><label>Line Item Name</label><input type="text" id="li-name" placeholder="e.g. Entertainment, OTA Advertising"></div>
+      <div class="fg">
+        <div class="fr"><label>Category</label>
+          <select id="li-cat"><option>Digital</option><option>Social Media</option><option>Influencer</option><option>Print & Production</option><option>Events</option><option>PR & Media</option><option>Entertainment</option><option>Other</option></select>
+        </div>
+        <div class="fr"><label>Sort Order</label><input type="number" id="li-sort" placeholder="1"></div>
+      </div>
+      <div class="fr"><label>Linked Module (auto-rolls spend from sub-module)</label>
+        <select id="li-link">
+          <option value="">None — manual entries only</option>
+          <option value="social">Social Media module</option>
+          <option value="influencer">Influencer module</option>
+          <option value="print">Suppliers / Print module</option>
+        </select>
+      </div>
+      <div class="fr"><label>Notes</label><textarea id="li-notes" placeholder="Description, what this covers..."></textarea></div>
+      <input type="hidden" id="li-id">
+    </div>
+    <div class="modal-ft"><button class="btn btn-out" onclick="closeM('m-li')">Cancel</button><button class="btn btn-gold" onclick="saveLI()" id="li-save">Add Line Item</button></div>
+  </div>
+</div>
+
+<!-- SIDEBAR FIELD MODAL -->
+<div class="overlay" id="m-sbf">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-t" id="sbf-t">Add Quick-Link</div><button class="modal-x" onclick="closeM('m-sbf')">×</button></div>
+    <div class="modal-bd">
+      <div class="fg">
+        <div class="fr"><label>Label</label><input type="text" id="sbf-lbl" placeholder="e.g. Media Kit, Hotel Website"></div>
+        <div class="fr"><label>Type</label><select id="sbf-type"><option value="link">External Link</option><option value="note">Note / Text</option></select></div>
+      </div>
+      <div class="fr"><label>URL or Value</label><input type="text" id="sbf-val" placeholder="https://... or any text"></div>
+      <input type="hidden" id="sbf-id">
+    </div>
+    <div class="modal-ft"><button class="btn btn-out" onclick="closeM('m-sbf')">Cancel</button><button class="btn btn-gold" onclick="saveSBF()" id="sbf-save">Add</button></div>
+  </div>
+</div>
+
+<script>
+document.getElementById('sidebar').innerHTML = getSidebarHTML('settings');
+const sess = requireAuth();
+if(sess?.role !== 'admin'){ alert('Admin access required.');window.location.href='dashboard.html'; }
+let D={};
+
+async function load(){
+  showLoader('Loading Settings...');
+  try{
+    const r=await DB.getAll();D=r;
+    renderSidebar(r.user,r.sidebarFields);
+    render();
+    document.getElementById('api-url').value = API_URL;
+    // Try to get Google Sheet URL from localStorage if stored
+    const sheetId = localStorage.getItem('cc_sheet_id');
+    if(sheetId) document.getElementById('sheets-link').href=`https://docs.google.com/spreadsheets/d/${sheetId}`;
+  }catch(e){toast('Load failed: '+e.message,'e');}
+  hideLoader();
+}
+
+function render(){
+  let liRows='';
+  (D.lineItems||[]).forEach((li,i)=>{
+    const mod=li.linked_module?({social:'🔗 Social Media',influencer:'🔗 Influencer',print:'🔗 Print/Suppliers'}[li.linked_module]||li.linked_module):'—';
+    liRows+=`<tr><td style="color:var(--text-2)">${i+1}</td><td><strong>${li.name}</strong></td><td><span class="pill pg">${li.category}</span></td><td style="font-size:11.5px">${mod}</td><td style="font-size:11px;color:var(--text-2);max-width:200px">${li.notes||'—'}</td><td><div style="display:flex;gap:5px"><button class="btn btn-edit btn-sm" onclick="editLI('${li.id}')">Edit</button><button class="btn btn-ghost btn-sm" onclick="delLI('${li.id}')">✕</button></div></td></tr>`;
+  });
+  document.getElementById('li-tbl').innerHTML=liRows||`<tr><td colspan="6"><div class="empty">No line items yet.</div></td></tr>`;
+
+  let sfRows='';
+  (D.sidebarFields||[]).forEach(f=>{
+    sfRows+=`<tr><td><strong>${f.label}</strong></td><td style="font-size:11.5px;color:var(--text-2)">${f.value||'—'}</td><td><span class="pill ${f.type==='link'?'pb':'pa'}">${f.type}</span></td><td><div style="display:flex;gap:5px"><button class="btn btn-edit btn-sm" onclick="editSBF('${f.id}')">Edit</button><button class="btn btn-ghost btn-sm" onclick="delSBF('${f.id}')">✕</button></div></td></tr>`;
+  });
+  document.getElementById('sbf-tbl').innerHTML=sfRows||`<tr><td colspan="4"><div class="empty">No quick-links yet.</div></td></tr>`;
+}
+
+function openLIModal(){
+  document.getElementById('li-t').textContent='Add Line Item';document.getElementById('li-save').textContent='Add Line Item';document.getElementById('li-id').value='';
+  ['li-name','li-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('li-sort').value='';document.getElementById('li-link').value='';openM('m-li');
+}
+function editLI(id){
+  const li=(D.lineItems||[]).find(l=>l.id==id);if(!li)return;
+  document.getElementById('li-t').textContent='Edit Line Item';document.getElementById('li-save').textContent='Update';document.getElementById('li-id').value=id;
+  document.getElementById('li-name').value=li.name||'';document.getElementById('li-cat').value=li.category||'Digital';
+  document.getElementById('li-link').value=li.linked_module||'';document.getElementById('li-sort').value=li.sort_order||'';
+  document.getElementById('li-notes').value=li.notes||'';openM('m-li');
+}
+async function saveLI(){
+  const eid=document.getElementById('li-id').value;
+  const name=document.getElementById('li-name').value.trim();
+  if(!name){toast('Name required.','e');return;}
+  const p={name,category:document.getElementById('li-cat').value,linked_module:document.getElementById('li-link').value||'',notes:document.getElementById('li-notes').value,sort_order:parseInt(document.getElementById('li-sort').value)||99};
+  showLoader('Saving...');
+  try{if(eid)await DB.update('LINE_ITEMS',eid,p);else await DB.add('LINE_ITEMS',p);const r=await DB.getAll();D=r;closeM('m-li');render();toast(eid?'Updated!':'Line item added!');}
+  catch(e){toast('Failed: '+e.message,'e');}
+  hideLoader();
+}
+async function delLI(id){if(!confirm('Delete line item?'))return;showLoader('Deleting...');try{await DB.remove('LINE_ITEMS',id);const r=await DB.getAll();D=r;render();toast('Deleted.');}catch(e){toast('Failed: '+e.message,'e');}hideLoader();}
+
+function openSBFModal(){
+  document.getElementById('sbf-t').textContent='Add Quick-Link';document.getElementById('sbf-save').textContent='Add';document.getElementById('sbf-id').value='';
+  ['sbf-lbl','sbf-val'].forEach(id=>document.getElementById(id).value='');openM('m-sbf');
+}
+function editSBF(id){
+  const f=(D.sidebarFields||[]).find(x=>x.id==id);if(!f)return;
+  document.getElementById('sbf-t').textContent='Edit Quick-Link';document.getElementById('sbf-save').textContent='Update';document.getElementById('sbf-id').value=id;
+  document.getElementById('sbf-lbl').value=f.label||'';document.getElementById('sbf-val').value=f.value||'';
+  document.getElementById('sbf-type').value=f.type||'link';openM('m-sbf');
+}
+async function saveSBF(){
+  const eid=document.getElementById('sbf-id').value;
+  const lbl=document.getElementById('sbf-lbl').value.trim();
+  if(!lbl){toast('Label required.','e');return;}
+  const p={label:lbl,value:document.getElementById('sbf-val').value,type:document.getElementById('sbf-type').value,sort_order:(D.sidebarFields||[]).length+1};
+  showLoader('Saving...');
+  try{if(eid)await DB.update('SIDEBAR_FIELDS',eid,p);else await DB.add('SIDEBAR_FIELDS',p);const r=await DB.getAll();D=r;closeM('m-sbf');render();toast(eid?'Updated!':'Quick-link added!');}
+  catch(e){toast('Failed: '+e.message,'e');}
+  hideLoader();
+}
+async function delSBF(id){if(!confirm('Delete?'))return;showLoader('Deleting...');try{await DB.remove('SIDEBAR_FIELDS',id);const r=await DB.getAll();D=r;render();toast('Deleted.');}catch(e){toast('Failed: '+e.message,'e');}hideLoader();}
+
+async function testAPI(){
+  const el=document.getElementById('api-result');
+  el.innerHTML='<span style="color:var(--text-2)">Testing...</span>';
+  try{
+    await DB.getAll();
+    el.innerHTML='<span style="color:var(--green)">✓ Connected successfully!</span>';
+  }catch(e){
+    el.innerHTML=`<span style="color:var(--red)">✗ Failed: ${e.message}</span>`;
+  }
+}
+
+async function exportData(){
+  showLoader('Exporting...');
+  try{
+    const r=await DB.getAll();
+    const blob=new Blob([JSON.stringify({exported:new Date().toISOString(),...r},null,2)],{type:'application/json'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+    a.download=`cc-marketing-export-${new Date().toISOString().split('T')[0]}.json`;a.click();
+    toast('Export downloaded!');
+  }catch(e){toast('Export failed: '+e.message,'e');}
+  hideLoader();
+}
+
+load();
+</script>
+</body>
+</html>

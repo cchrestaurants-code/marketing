@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Influencers — CC Marketing Hub</title>
+<link rel="stylesheet" href="../css/main.css">
+<script src="../js/app.js"></script>
+<script src="../js/sidebar.js"></script>
+</head>
+<body>
+<div id="loader"><div class="spin"></div><div id="loader-msg">Loading...</div></div>
+<aside class="sidebar" id="sidebar"></aside>
+<main class="main">
+  <header class="topbar">
+    <div><div class="tb-title">Influencer Marketing</div><div class="tb-sub">Roster management & engagement tracking</div></div>
+    <div class="tb-r">
+      <span class="fy-chip">LKR · FY 2026–27</span>
+      <button class="btn btn-out" onclick="openEngModal()">+ Log Engagement</button>
+      <button class="btn btn-gold" onclick="openInfModal()">+ Add Influencer</button>
+    </div>
+  </header>
+  <div class="content">
+    <div class="kpi-row k4" id="inf-kpis"></div>
+    <div class="sec"><div class="sec-t">Influencer Roster</div></div>
+    <div class="inf-grid" id="inf-cards"></div>
+    <div class="sec">
+      <div class="sec-t">Engagement Log — FY 2026–27</div>
+      <div class="m-tabs" id="e-tabs" style="margin:0"></div>
+    </div>
+    <div class="tc">
+      <table>
+        <thead><tr><th>Month</th><th>Influencer</th><th>Platform</th><th>Content Type</th><th>Campaign</th><th>Fee (LKR)</th><th>Status</th><th>Notes</th><th>Actions</th></tr></thead>
+        <tbody id="eng-tbl"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- INFLUENCER MODAL -->
+<div class="overlay" id="m-inf">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-t" id="inf-t">Add Influencer</div><button class="modal-x" onclick="closeM('m-inf')">×</button></div>
+    <div class="modal-bd">
+      <div class="fg"><div class="fr"><label>Full Name</label><input type="text" id="i-name" placeholder="Name"></div><div class="fr"><label>Handle</label><input type="text" id="i-handle" placeholder="@handle"></div></div>
+      <div class="fg">
+        <div class="fr"><label>Platform</label><select id="i-plat"><option>Instagram</option><option>TikTok</option><option>YouTube</option><option>Facebook</option><option>LinkedIn</option></select></div>
+        <div class="fr"><label>Niche</label><input type="text" id="i-niche" placeholder="e.g. Travel, Food, Lifestyle"></div>
+      </div>
+      <div class="fg3">
+        <div class="fr"><label>Followers</label><input type="number" id="i-fol" placeholder="0"></div>
+        <div class="fr"><label>Engagement Rate %</label><input type="number" id="i-er" placeholder="0.00" step="0.01"></div>
+        <div class="fr"><label>Typical Fee (LKR)</label><input type="number" id="i-fee" placeholder="0"></div>
+      </div>
+      <div class="fg"><div class="fr"><label>Tier</label><select id="i-tier"><option>Nano (&lt;10K)</option><option>Micro (10K–50K)</option><option>Mid (50K–500K)</option><option>Macro (500K+)</option></select></div><div class="fr"><label>Profile Link</label><input type="text" id="i-link" placeholder="https://..."></div></div>
+      <div class="fr"><label>Notes</label><textarea id="i-notes"></textarea></div>
+      <input type="hidden" id="i-id">
+    </div>
+    <div class="modal-ft"><button class="btn btn-out" onclick="closeM('m-inf')">Cancel</button><button class="btn btn-gold" onclick="saveInf()" id="i-save">Add Influencer</button></div>
+  </div>
+</div>
+
+<!-- ENGAGEMENT MODAL -->
+<div class="overlay" id="m-eng">
+  <div class="modal">
+    <div class="modal-hd"><div class="modal-t" id="eng-t">Log Engagement</div><button class="modal-x" onclick="closeM('m-eng')">×</button></div>
+    <div class="modal-bd">
+      <div class="fg">
+        <div class="fr"><label>Month</label><select id="e-mo"></select></div>
+        <div class="fr"><label>Influencer</label><select id="e-inf"></select></div>
+      </div>
+      <div class="fg">
+        <div class="fr"><label>Content Type</label><select id="e-ct"><option>Instagram Post</option><option>Instagram Reel</option><option>Instagram Story</option><option>TikTok Video</option><option>YouTube Video</option><option>Blog Post</option><option>Hosted Stay</option><option>Event Attendance</option><option>Other</option></select></div>
+        <div class="fr"><label>Fee (LKR)</label><input type="number" id="e-fee" placeholder="0"></div>
+      </div>
+      <div class="fg">
+        <div class="fr"><label>Campaign Name</label><input type="text" id="e-camp" placeholder="e.g. Summer Staycation, Spa Promo"></div>
+        <div class="fr"><label>Status</label><select id="e-status"><option>Planned</option><option>Brief Sent</option><option>Confirmed</option><option>Content Live</option><option>Completed</option><option>Cancelled</option></select></div>
+      </div>
+      <div class="fr"><label>Notes</label><textarea id="e-notes"></textarea></div>
+      <input type="hidden" id="e-id">
+    </div>
+    <div class="modal-ft"><button class="btn btn-out" onclick="closeM('m-eng')">Cancel</button><button class="btn btn-gold" onclick="saveEng()" id="e-save">Log Engagement</button></div>
+  </div>
+</div>
+
+<script>
+document.getElementById('sidebar').innerHTML = getSidebarHTML('influencers');
+requireAuth();
+let D={}, eFilter='all';
+
+async function load(){
+  showLoader('Loading...');
+  try{const r=await DB.getAll();D=r;renderSidebar(r.user,r.sidebarFields);render();}
+  catch(e){toast('Load failed: '+e.message,'e');}
+  hideLoader();
+}
+
+function getYTDFee(infId){return(D.engagements||[]).filter(e=>e.influencer_id==infId).reduce((a,e)=>a+Number(e.fee||0),0);}
+
+function render(){
+  const infs=D.influencers||[], engs=D.engagements||[];
+  const totFee=engs.reduce((a,e)=>a+Number(e.fee||0),0);
+  document.getElementById('inf-kpis').innerHTML=`
+    <div class="kpi k-g"><div class="kpi-lbl">Total Influencers</div><div class="kpi-val">${infs.length}</div><div class="kpi-sub">in roster</div></div>
+    <div class="kpi k-a"><div class="kpi-lbl">YTD Influencer Spend</div><div class="kpi-val">${fmt(totFee)}</div></div>
+    <div class="kpi k-b"><div class="kpi-lbl">Active Campaigns</div><div class="kpi-val">${engs.filter(e=>['Confirmed','Content Live'].includes(e.status)).length}</div></div>
+    <div class="kpi k-gr"><div class="kpi-lbl">Completed This FY</div><div class="kpi-val">${engs.filter(e=>e.status==='Completed').length}</div></div>`;
+
+  let cards='';
+  infs.forEach(inf=>{
+    cards+=`<div class="inf-c">
+      <div class="inf-name">${inf.name}</div>
+      <div class="inf-handle">${inf.handle||'—'} · <span class="pill pg">${inf.platform||'—'}</span></div>
+      <div class="inf-s"><span>Followers</span><span class="v">${Number(inf.followers||0).toLocaleString()}</span></div>
+      <div class="inf-s"><span>Engagement Rate</span><span class="v">${inf.engagement_rate||0}%</span></div>
+      <div class="inf-s"><span>Typical Fee</span><span class="v">${fmt(inf.typical_fee)}</span></div>
+      <div class="inf-s"><span>YTD Paid</span><span class="v" style="color:var(--amber)">${fmt(getYTDFee(inf.id))}</span></div>
+      <div class="inf-s"><span>Niche</span><span class="v">${inf.niche||'—'}</span></div>
+      <div class="inf-s"><span>Tier</span><span class="v">${inf.tier||'—'}</span></div>
+      ${inf.profile_link?`<div class="inf-s"><a href="${inf.profile_link}" target="_blank" style="color:var(--blue);font-size:11px">View Profile →</a></div>`:''}
+      <div class="inf-acts">
+        <button class="btn btn-edit btn-sm" onclick="editInf('${inf.id}')">Edit</button>
+        <button class="btn btn-ghost btn-sm" onclick="delInf('${inf.id}')">✕</button>
+      </div>
+    </div>`;
+  });
+  document.getElementById('inf-cards').innerHTML=cards||`<div style="grid-column:1/-1"><div class="empty"><div class="ei">👤</div>No influencers added yet.</div></div>`;
+
+  // Engagement tabs
+  document.getElementById('e-tabs').innerHTML=`<div class="m-tab ${eFilter==='all'?'active':''}" onclick="setEF('all')">All</div>`+
+    FY_MONTHS.map((m,i)=>`<div class="m-tab ${eFilter==i?'active':''}" onclick="setEF(${i})">${FY_SHORT[i]}</div>`).join('');
+
+  const filtered=eFilter==='all'?engs:engs.filter(e=>e.fy_month==eFilter);
+  let eRows='';
+  filtered.forEach(e=>{
+    const inf=infs.find(x=>x.id==e.influencer_id);
+    const sc={'Planned':'pb','Brief Sent':'pb','Confirmed':'bgo','Content Live':'pgr','Completed':'pgr','Cancelled':'pr'};
+    eRows+=`<tr><td>${fyLabel(e.fy_month)}</td><td><strong>${inf?.name||'Unknown'}</strong></td><td><span class="pill pg">${inf?.platform||'—'}</span></td><td>${e.content_type||'—'}</td><td>${e.campaign||'—'}</td><td class="mono" style="font-weight:600">${fmt(e.fee)}</td><td><span class="pill ${sc[e.status]||'pb'}">${e.status||'—'}</span></td><td style="font-size:11px;color:var(--text-2)">${e.notes||'—'}</td><td><div style="display:flex;gap:4px"><button class="btn btn-edit btn-sm" onclick="editEng('${e.id}')">Edit</button><button class="btn btn-ghost btn-sm" onclick="delEng('${e.id}')">✕</button></div></td></tr>`;
+  });
+  document.getElementById('eng-tbl').innerHTML=eRows||`<tr><td colspan="9"><div class="empty"><div class="ei">◎</div>No engagements logged yet.</div></td></tr>`;
+}
+
+function setEF(v){eFilter=v;render();}
+
+function openInfModal(){
+  document.getElementById('inf-t').textContent='Add Influencer';document.getElementById('i-save').textContent='Add Influencer';document.getElementById('i-id').value='';
+  ['i-name','i-handle','i-niche','i-link','i-notes'].forEach(id=>document.getElementById(id).value='');
+  ['i-fol','i-er','i-fee'].forEach(id=>document.getElementById(id).value='');
+  openM('m-inf');
+}
+function editInf(id){
+  const inf=(D.influencers||[]).find(x=>x.id==id);if(!inf)return;
+  document.getElementById('inf-t').textContent='Edit Influencer';document.getElementById('i-save').textContent='Update';document.getElementById('i-id').value=id;
+  document.getElementById('i-name').value=inf.name||'';document.getElementById('i-handle').value=inf.handle||'';
+  document.getElementById('i-plat').value=inf.platform||'Instagram';document.getElementById('i-niche').value=inf.niche||'';
+  document.getElementById('i-fol').value=inf.followers||'';document.getElementById('i-er').value=inf.engagement_rate||'';
+  document.getElementById('i-fee').value=inf.typical_fee||'';document.getElementById('i-tier').value=inf.tier||'Micro (10K–50K)';
+  document.getElementById('i-link').value=inf.profile_link||'';document.getElementById('i-notes').value=inf.notes||'';
+  openM('m-inf');
+}
+async function saveInf(){
+  const eid=document.getElementById('i-id').value;
+  const name=document.getElementById('i-name').value.trim();
+  if(!name){toast('Name required.','e');return;}
+  const p={name,handle:document.getElementById('i-handle').value,platform:document.getElementById('i-plat').value,niche:document.getElementById('i-niche').value,followers:parseInt(document.getElementById('i-fol').value)||0,engagement_rate:parseFloat(document.getElementById('i-er').value)||0,typical_fee:parseFloat(document.getElementById('i-fee').value)||0,tier:document.getElementById('i-tier').value,profile_link:document.getElementById('i-link').value,notes:document.getElementById('i-notes').value};
+  showLoader('Saving...');
+  try{if(eid)await DB.update('INFLUENCERS',eid,p);else await DB.add('INFLUENCERS',p);const r=await DB.getAll();D=r;closeM('m-inf');render();toast(eid?'Updated!':'Influencer added!');}
+  catch(e){toast('Failed: '+e.message,'e');}
+  hideLoader();
+}
+async function delInf(id){if(!confirm('Delete influencer?'))return;showLoader('Deleting...');try{await DB.remove('INFLUENCERS',id);const r=await DB.getAll();D=r;render();toast('Deleted.');}catch(e){toast('Failed: '+e.message,'e');}hideLoader();}
+
+function openEngModal(){
+  document.getElementById('eng-t').textContent='Log Engagement';document.getElementById('e-save').textContent='Log Engagement';document.getElementById('e-id').value='';
+  document.getElementById('e-mo').innerHTML=FY_MONTHS.map((m,i)=>`<option value="${i}" ${i===fyIdxNow()?'selected':''}>${fyLabel(i)}</option>`).join('');
+  document.getElementById('e-inf').innerHTML=(D.influencers||[]).map(i=>`<option value="${i.id}">${i.name}</option>`).join('');
+  document.getElementById('e-fee').value='';document.getElementById('e-camp').value='';document.getElementById('e-notes').value='';
+  openM('m-eng');
+}
+function editEng(id){
+  const e=(D.engagements||[]).find(x=>x.id==id);if(!e)return;
+  document.getElementById('eng-t').textContent='Edit Engagement';document.getElementById('e-save').textContent='Update';document.getElementById('e-id').value=id;
+  document.getElementById('e-mo').innerHTML=FY_MONTHS.map((m,i)=>`<option value="${i}" ${i==e.fy_month?'selected':''}>${fyLabel(i)}</option>`).join('');
+  document.getElementById('e-inf').innerHTML=(D.influencers||[]).map(i=>`<option value="${i.id}" ${i.id==e.influencer_id?'selected':''}>${i.name}</option>`).join('');
+  document.getElementById('e-ct').value=e.content_type||'';document.getElementById('e-fee').value=e.fee||'';
+  document.getElementById('e-camp').value=e.campaign||'';document.getElementById('e-status').value=e.status||'Planned';
+  document.getElementById('e-notes').value=e.notes||'';openM('m-eng');
+}
+async function saveEng(){
+  const eid=document.getElementById('e-id').value;
+  const p={influencer_id:document.getElementById('e-inf').value,fy:FY,fy_month:parseInt(document.getElementById('e-mo').value),content_type:document.getElementById('e-ct').value,fee:parseFloat(document.getElementById('e-fee').value)||0,campaign:document.getElementById('e-camp').value,status:document.getElementById('e-status').value,notes:document.getElementById('e-notes').value};
+  showLoader('Saving...');
+  try{if(eid)await DB.update('ENGAGEMENTS',eid,p);else await DB.add('ENGAGEMENTS',p);const r=await DB.getAll();D=r;closeM('m-eng');render();toast(eid?'Updated!':'Engagement logged!');}
+  catch(e){toast('Failed: '+e.message,'e');}
+  hideLoader();
+}
+async function delEng(id){if(!confirm('Delete?'))return;showLoader('Deleting...');try{await DB.remove('ENGAGEMENTS',id);const r=await DB.getAll();D=r;render();toast('Deleted.');}catch(e){toast('Failed: '+e.message,'e');}hideLoader();}
+
+load();
+</script>
+</body>
+</html>

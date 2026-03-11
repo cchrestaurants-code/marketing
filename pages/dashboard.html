@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dashboard — CC Marketing Hub</title>
+<link rel="stylesheet" href="../css/main.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/sidebar.js"></script>
+</head>
+<body>
+<div id="loader"><div class="spin"></div><div id="loader-msg">Loading...</div></div>
+
+<aside class="sidebar" id="sidebar"></aside>
+
+<main class="main">
+  <header class="topbar">
+    <div>
+      <div class="tb-title">Dashboard</div>
+      <div class="tb-sub">Annual & monthly budget overview · FY Apr 2026 – Mar 2027</div>
+    </div>
+    <div class="tb-r">
+      <span class="fy-chip">LKR · FY 2026–27</span>
+      <a href="budget.html" class="btn btn-out">+ Record Spend</a>
+    </div>
+  </header>
+
+  <div class="content">
+    <div class="sec" style="margin-top:0"><div class="sec-t">Annual Overview</div></div>
+    <div class="kpi-row k4" id="ann-kpis"></div>
+
+    <div class="sec"><div class="sec-t" id="cm-head">Current Month</div></div>
+    <div class="kpi-row k4" id="mon-kpis"></div>
+
+    <div class="ch-row ch-2l">
+      <div class="ch-card">
+        <div class="ch-title">Monthly Spend vs Budget</div>
+        <div class="ch-sub">Actual spend vs monthly budget allocations across FY 2026–27</div>
+        <canvas id="ch-mvb"></canvas>
+      </div>
+      <div class="ch-card">
+        <div class="ch-title">Annual Allocation by Category</div>
+        <div class="ch-sub">Total annual budget split across line items</div>
+        <canvas id="ch-donut"></canvas>
+      </div>
+    </div>
+
+    <div class="ch-row ch-2">
+      <div class="ch-card">
+        <div class="ch-title">YTD Spend vs Budget — By Line Item</div>
+        <div class="ch-sub">Year-to-date actuals against annual budgets</div>
+        <canvas id="ch-ytd"></canvas>
+      </div>
+      <div class="ch-card">
+        <div class="ch-title">Social Media Spend Breakdown</div>
+        <div class="ch-sub">YTD social spend by campaign type</div>
+        <canvas id="ch-soc"></canvas>
+      </div>
+    </div>
+
+    <div class="tc">
+      <div class="tc-head">
+        <div class="tc-title">Budget Health — All Line Items</div>
+        <span class="pill pg">Annual View</span>
+      </div>
+      <table>
+        <thead><tr><th>Line Item</th><th>Category</th><th>Annual Budget</th><th>Spent YTD</th><th>Remaining</th><th>% Used</th><th>Status</th></tr></thead>
+        <tbody id="health-tbl"></tbody>
+      </table>
+    </div>
+
+    <div class="tc">
+      <div class="tc-head">
+        <div class="tc-title">Monthly Budget vs Spend — All Months</div>
+        <span class="pill pb">FY Apr 2026 – Mar 2027</span>
+      </div>
+      <div class="overflow-x">
+        <table><thead id="mon-thead"></thead><tbody id="mon-tbody"></tbody></table>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+document.getElementById('sidebar').innerHTML = getSidebarHTML('dashboard');
+const sess = requireAuth(); if(!sess) throw '';
+
+let D = {};
+const CI = {};
+function kc(id){ if(CI[id]){CI[id].destroy();delete CI[id];} }
+
+async function load() {
+  showLoader('Loading dashboard...');
+  try {
+    const r = await DB.getAll();
+    D = r;
+    renderSidebar(r.user, r.sidebarFields);
+    render();
+  } catch(e) { toast('Failed to load: '+e.message,'e'); }
+  hideLoader();
+}
+
+// Calc helpers
+function getMB(liId,m){ const b=D.monthlyBudgets.find(x=>x.line_item_id==liId&&x.month==m); return Number(b?.amount||0); }
+function getDS(liId,m){ return D.spends.filter(s=>s.line_item_id==liId&&s.fy_month==m).reduce((a,s)=>a+Number(s.amount||0),0); }
+function getLS(liId,m){
+  const li=D.lineItems.find(l=>l.id==liId);if(!li?.linked_module)return 0;
+  if(li.linked_module==='social')    return D.socialSpends.filter(s=>s.fy_month==m).reduce((a,s)=>a+Number(s.amount||0),0);
+  if(li.linked_module==='influencer')return D.engagements.filter(e=>e.fy_month==m).reduce((a,e)=>a+Number(e.fee||0),0);
+  if(li.linked_module==='print')     return D.printOrders.filter(o=>o.fy_month==m).reduce((a,o)=>a+Number(o.qty||0)*Number(o.unit_price||0),0);
+  return 0;
+}
+function getMS(liId,m){ return getDS(liId,m)+getLS(liId,m); }
+function getYTD(liId){ let t=0;for(let i=0;i<12;i++)t+=getMS(liId,i);return t; }
+function getAB(liId){ return D.monthlyBudgets.filter(b=>b.line_item_id==liId).reduce((a,b)=>a+Number(b.amount||0),0); }
+function gMB(m){ return D.lineItems.reduce((a,l)=>a+getMB(l.id,m),0); }
+function gMS(m){ return D.lineItems.reduce((a,l)=>a+getMS(l.id,m),0); }
+function gAB(){ return D.lineItems.reduce((a,l)=>a+getAB(l.id),0); }
+function gYTD(){ return D.lineItems.reduce((a,l)=>a+getYTD(l.id),0); }
+
+function render() {
+  const cm=fyIdxNow(), tb=gAB(), ts=gYTD(), rem=tb-ts, p=tb>0?ts/tb*100:0;
+  const mb=gMB(cm), ms=gMS(cm), mrem=mb-ms, mp=mb>0?ms/mb*100:0;
+
+  document.getElementById('ann-kpis').innerHTML=`
+    <div class="kpi k-g"><div class="kpi-lbl">Total Annual Budget</div><div class="kpi-val">${fmt(tb)}</div><div class="kpi-sub">${D.lineItems.length} line items · FY 2026–27</div></div>
+    <div class="kpi ${p>=80?'k-r':p>=50?'k-a':'k-gr'}"><div class="kpi-lbl">Total Spent YTD</div><div class="kpi-val">${fmt(ts)}</div><span class="kpi-badge ${p>=80?'bgr':p>=50?'bga':'bgg'}">${p.toFixed(1)}% used</span></div>
+    <div class="kpi k-b"><div class="kpi-lbl">Annual Remaining</div><div class="kpi-val">${fmt(rem)}</div><div class="kpi-sub">${(100-p).toFixed(1)}% available</div></div>
+    <div class="kpi k-a"><div class="kpi-lbl">Items at Risk</div><div class="kpi-val">${D.lineItems.filter(l=>{const pp=getAB(l.id)>0?getYTD(l.id)/getAB(l.id)*100:0;return pp>=80;}).length}</div><div class="kpi-sub">≥80% of annual budget used</div></div>`;
+
+  document.getElementById('cm-head').textContent = fyLabel(cm) + ' — Current Month';
+  document.getElementById('mon-kpis').innerHTML=`
+    <div class="kpi k-g"><div class="kpi-lbl">${FY_MONTHS[cm]} Budget</div><div class="kpi-val">${fmt(mb)}</div><div class="kpi-sub">Allocated this month</div></div>
+    <div class="kpi ${mp>=80?'k-r':mp>=50?'k-a':'k-gr'}"><div class="kpi-lbl">${FY_MONTHS[cm]} Spent</div><div class="kpi-val">${fmt(ms)}</div><span class="kpi-badge ${mp>=80?'bgr':mp>=50?'bga':'bgg'}">${mp.toFixed(1)}% of monthly budget</span></div>
+    <div class="kpi k-b"><div class="kpi-lbl">${FY_MONTHS[cm]} Remaining</div><div class="kpi-val">${fmt(mrem)}</div><div class="kpi-sub">${mrem<0?'⚠ Over this month':''}</div></div>
+    <div class="kpi k-a"><div class="kpi-lbl">Social Spend ${FY_SHORT[cm]}</div><div class="kpi-val">${fmt(D.socialSpends.filter(s=>s.fy_month==cm).reduce((a,s)=>a+Number(s.amount||0),0))}</div></div>`;
+
+  // Health table
+  let rows='';
+  D.lineItems.forEach(li=>{
+    const ab=getAB(li.id),ytd=getYTD(li.id),r=ab-ytd,pp=ab>0?ytd/ab*100:0;
+    rows+=`<tr><td><strong>${li.name}</strong></td><td><span class="pill pg">${li.category}</span></td><td class="mono">${fmt(ab)}</td><td class="mono">${fmt(ytd)}</td><td class="mono" style="color:${r<0?'var(--red)':'var(--green)';font-weight:600">${fmt(r)}</td><td>${progBar(pp)}</td><td>${statusPill(pp)}</td></tr>`;
+  });
+  document.getElementById('health-tbl').innerHTML=rows||`<tr><td colspan="7"><div class="empty"><div class="ei">◉</div>No line items. Go to Settings to add.</div></td></tr>`;
+
+  // Monthly table
+  document.getElementById('mon-thead').innerHTML=`<tr><th>Line Item</th>${FY_SHORT.map(s=>`<th style="min-width:88px">${s}</th>`).join('')}<th>Total</th></tr>`;
+  let mrows='';
+  D.lineItems.forEach(li=>{
+    const cells=FY_MONTHS.map((_,i)=>{
+      const b=getMB(li.id,i),s=getMS(li.id,i),r=b-s,pp=b>0?s/b*100:0;
+      const col=pp>=100?'var(--red)':pp>=80?'var(--amber)':'var(--text-2)';
+      return `<td style="font-size:11px"><div style="color:var(--text);font-weight:500">${fmt(b)}</div><div style="color:${col}">${fmt(s)}</div><div style="font-size:9.5px;color:var(--text-3)">rem:${fmt(r)}</div></td>`;
+    });
+    mrows+=`<tr style="border-bottom:2px solid rgba(184,149,106,0.08)"><td><strong>${li.name}</strong><br><span style="font-size:9.5px;color:var(--text-2)">Budget / Spent / Rem</span></td>${cells.join('')}<td><div style="font-weight:600;font-size:11px">${fmt(getAB(li.id))}</div><div style="color:var(--amber);font-size:11px">${fmt(getYTD(li.id))}</div></td></tr>`;
+  });
+  const totCells=FY_MONTHS.map((_,i)=>`<td style="font-size:11px;background:rgba(184,149,106,0.04)"><div style="color:var(--gold);font-weight:600">${fmt(gMB(i))}</div><div style="color:var(--text)">${fmt(gMS(i))}</div></td>`);
+  mrows+=`<tr style="background:rgba(184,149,106,0.03)"><td><strong style="color:var(--gold)">TOTAL</strong><br><span style="font-size:9.5px;color:var(--text-2)">Budget / Spent</span></td>${totCells.join('')}<td><div style="font-weight:600;color:var(--gold)">${fmt(gAB())}</div><div style="color:var(--text)">${fmt(gYTD())}</div></td></tr>`;
+  document.getElementById('mon-tbody').innerHTML=mrows;
+
+  renderCharts();
+}
+
+function renderCharts(){
+  const PAL=['#b8956a','#4db87a','#e05555','#d48040','#5a90d8','#9b7ac8','#4db8a0'];
+  kc('ch-mvb');
+  CI['ch-mvb']=new Chart(document.getElementById('ch-mvb'),{type:'bar',data:{labels:FY_SHORT,datasets:[{label:'Budget',data:FY_MONTHS.map((_,i)=>gMB(i)),type:'line',borderColor:'#b8956a',borderWidth:2,pointRadius:3,pointBackgroundColor:'#b8956a',fill:false,tension:.2,order:1},{label:'Actual',data:FY_MONTHS.map((_,i)=>gMS(i)),backgroundColor:FY_MONTHS.map((_,i)=>gMS(i)>gMB(i)?'rgba(224,85,85,0.55)':'rgba(184,149,106,0.5)'),borderRadius:4,order:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:'Poppins',size:11},color:'#9a9590'}}},scales:{y:{ticks:{callback:v=>'LKR '+fmtK(v),color:'#9a9590',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},x:{ticks:{color:'#9a9590',font:{size:10}},grid:{display:false}}}}});
+
+  kc('ch-donut');
+  CI['ch-donut']=new Chart(document.getElementById('ch-donut'),{type:'doughnut',data:{labels:D.lineItems.map(l=>l.name),datasets:[{data:D.lineItems.map(l=>getAB(l.id)),backgroundColor:PAL,borderWidth:2,borderColor:'#181826'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'62%',plugins:{legend:{position:'bottom',labels:{font:{size:10,family:'Poppins'},color:'#9a9590',boxWidth:10,padding:7}}}}});
+
+  kc('ch-ytd');
+  CI['ch-ytd']=new Chart(document.getElementById('ch-ytd'),{type:'bar',data:{labels:D.lineItems.map(l=>l.name.length>13?l.name.slice(0,13)+'…':l.name),datasets:[{label:'Budget',data:D.lineItems.map(l=>getAB(l.id)),backgroundColor:'rgba(184,149,106,0.22)',borderColor:'#b8956a',borderWidth:1.5,borderRadius:3},{label:'Spent',data:D.lineItems.map(l=>getYTD(l.id)),backgroundColor:'rgba(77,184,122,0.32)',borderColor:'#4db87a',borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:'Poppins',size:11},color:'#9a9590'}}},scales:{y:{ticks:{callback:v=>'LKR '+fmtK(v),color:'#9a9590',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},x:{ticks:{color:'#9a9590',font:{size:10}},grid:{display:false}}}}});
+
+  kc('ch-soc');
+  const st={};D.socialSpends.forEach(s=>{st[s.type]=(st[s.type]||0)+Number(s.amount||0);});
+  CI['ch-soc']=new Chart(document.getElementById('ch-soc'),{type:'doughnut',data:{labels:Object.keys(st).length?Object.keys(st):['No data'],datasets:[{data:Object.keys(st).length?Object.values(st):[1],backgroundColor:Object.keys(st).length?PAL:['rgba(255,255,255,0.06)'],borderWidth:2,borderColor:'#181826'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{font:{size:10,family:'Poppins'},color:'#9a9590',boxWidth:10}}}}});
+}
+
+load();
+</script>
+</body>
+</html>
