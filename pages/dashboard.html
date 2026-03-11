@@ -139,7 +139,7 @@ function render() {
   let rows='';
   D.lineItems.forEach(li=>{
     const ab=getAB(li.id),ytd=getYTD(li.id),r=ab-ytd,pp=ab>0?ytd/ab*100:0;
-    rows+=`<tr><td><strong>${li.name}</strong></td><td><span class="pill pg">${li.category}</span></td><td class="mono">${fmt(ab)}</td><td class="mono">${fmt(ytd)}</td><td class="mono" style="color:${r<0?'var(--red)':'var(--green)';font-weight:600">${fmt(r)}</td><td>${progBar(pp)}</td><td>${statusPill(pp)}</td></tr>`;
+    rows+=`<tr><td><strong>${li.name}</strong></td><td><span class="pill pg">${li.category}</span></td><td class="mono">${fmt(ab)}</td><td class="mono">${fmt(ytd)}</td><td class="mono" style="color:${r<0?'var(--red)':'var(--green)'};font-weight:600">${fmt(r)}</td><td>${progBar(pp)}</td><td>${statusPill(pp)}</td></tr>`;
   });
   document.getElementById('health-tbl').innerHTML=rows||`<tr><td colspan="7"><div class="empty"><div class="ei">◉</div>No line items. Go to Settings to add.</div></td></tr>`;
 
