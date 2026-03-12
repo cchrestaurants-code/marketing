@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Events & Promotions — CC Marketing Hub</title>
+<link rel="stylesheet" href="../css/main.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="../js/app.js"></script>
+<script src="../js/sidebar.js"></script>
+</head>
+<body>
+<div id="loader"><div class="spin"></div><div id="loader-msg">Loading...</div></div>
+<aside class="sidebar" id="sidebar"></aside>
+
+<main class="main">
+  <header class="topbar">
+    <div><div class="tb-title">Events & Promotions</div><div class="tb-sub">Special events, campaigns, pax tracking & ROI — FY Apr 2026 – Mar 2027</div></div>
+    <div class="tb-r">
+      <span class="fy-chip">LKR · FY 2026–27</span>
+      <button class="btn btn-gold" onclick="openEventModal()">+ Add Event</button>
+    </div>
+  </header>
+
+  <div class="content">
+    <!-- Annual KPIs -->
+    <div class="sec" style="margin-top:0"><div class="sec-t">Annual Overview</div></div>
+    <div class="kpi-row k4" id="ann-kpis"></div>
+
+    <!-- Charts -->
+    <div class="ch-row ch-2">
+      <div class="ch-card">
+        <div class="ch-title">Revenue vs Ad Spend — Per Event</div>
+        <div class="ch-sub">Revenue generated vs total ad spend for each event</div>
+        <canvas id="ch-rev"></canvas>
+      </div>
+      <div class="ch-card">
+        <div class="ch-title">Pax Target vs Actual</div>
+        <div class="ch-sub">Achieved pax count against target for each event</div>
+        <canvas id="ch-pax"></canvas>
+      </div>
+    </div>
+    <div class="ch-row" style="grid-template-columns:1fr">
+      <div class="ch-card">
+        <div class="ch-title">ROI % by Event</div>
+        <div class="ch-sub">Return on investment — revenue vs total spend per event</div>
+        <canvas id="ch-roi"></canvas>
+      </div>
+    </div>
+
+    <!-- Events table -->
+    <div class="tc">
+      <div class="tc-head">
+        <div class="tc-title">Event & Promotion Log</div>
+        <div style="display:flex;gap:6px">
+          <select id="status-filter" onchange="render()" style="background:var(--bg-3);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11.5px;font-family:Poppins,sans-serif;color:var(--text);outline:none">
+            <option value="all">All Status</option>
+            <option>Planning</option><option>Active</option><option>Completed</option><option>Cancelled</option>
+          </select>
+        </div>
+      </div>
+      <div class="overflow-x">
+        <table>
+          <thead><tr>
+            <th>Event Name</th><th>Type</th><th>Date</th><th>Month</th>
+            <th>Pax Target</th><th>Pax Actual</th><th>Pax %</th>
+            <th>Revenue Target</th><th>Revenue Actual</th><th>Rev %</th>
+            <th>Ad Spend (LKR)</th><th>Total Cost (LKR)</th>
+            <th>Cost/Pax</th><th>ROI %</th><th>Status</th>
+            <th>Actions</th>
+          </tr></thead>
+          <tbody id="ev-tbl"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Ad spend breakdown per event -->
+    <div class="tc" id="adspend-section">
+      <div class="tc-head">
+        <div class="tc-title">Ad Spend Breakdown — Linked from Social Media</div>
+        <span class="pill pb" style="font-size:10px">Auto-pulls matching campaigns from Social Media page</span>
+      </div>
+      <table>
+        <thead><tr><th>Event</th><th>Platform</th><th>Campaign Name</th><th>Date</th><th>Spend (LKR)</th><th>Impressions</th><th>Leads</th></tr></thead>
+        <tbody id="adspend-tbl"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<!-- ADD/EDIT EVENT MODAL -->
+<div class="overlay" id="m-ev">
+  <div class="modal wide">
+    <div class="modal-hd"><div class="modal-t" id="ev-modal-t">Add Event / Promotion</div><button class="modal-x" onclick="closeM('m-ev')">×</button></div>
+    <div class="modal-bd">
+      <div class="fg">
+        <div class="fr"><label>Event Name</label><input type="text" id="ev-name" placeholder="e.g. Iftar High Tea, Valentine Dinner, Spa Weekend"></div>
+        <div class="fr"><label>Event Type</label>
+          <select id="ev-type">
+            <option>High Tea</option><option>Dinner Event</option><option>Brunch</option>
+            <option>Staycation Package</option><option>Spa Promotion</option>
+            <option>Seasonal Campaign</option><option>Corporate Event</option><option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="fg">
+        <div class="fr"><label>Event Date</label><input type="date" id="ev-date"></div>
+        <div class="fr"><label>Status</label>
+          <select id="ev-status"><option>Planning</option><option>Active</option><option>Completed</option><option>Cancelled</option></select>
+        </div>
+      </div>
+
+      <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:7px;padding:12px;margin-bottom:12px">
+        <div style="font-size:10px;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">👥 Pax (People) Targets — Achievement % calculated automatically</div>
+        <div class="fg3">
+          <div class="fr"><label>Pax Target</label><input type="number" id="ev-pax-t" placeholder="0" oninput="calcMetrics()"></div>
+          <div class="fr"><label>Pax Actual</label><input type="number" id="ev-pax-a" placeholder="0" oninput="calcMetrics()"></div>
+          <div class="fr">
+            <label>Pax Achievement % <span style="color:var(--green);font-size:9px">AUTO</span></label>
+            <input type="text" id="ev-pax-pct" readonly style="opacity:.7;cursor:not-allowed;color:var(--gold);font-weight:600">
+          </div>
+        </div>
+      </div>
+
+      <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:7px;padding:12px;margin-bottom:12px">
+        <div style="font-size:10px;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:10px">💰 Revenue & Costs — ROI calculated automatically</div>
+        <div class="fg">
+          <div class="fr"><label>Revenue Target (LKR)</label><input type="number" id="ev-rev-t" placeholder="0" oninput="calcMetrics()"></div>
+          <div class="fr"><label>Revenue Actual (LKR)</label><input type="number" id="ev-rev-a" placeholder="0" oninput="calcMetrics()"></div>
+        </div>
+        <div class="fg3">
+          <div class="fr"><label>Ad Spend (LKR)</label><input type="number" id="ev-ad-spend" placeholder="0" oninput="calcMetrics()"></div>
+          <div class="fr"><label>Other Costs (LKR)</label><input type="number" id="ev-other-cost" placeholder="0" oninput="calcMetrics()"></div>
+          <div class="fr">
+            <label>Total Cost (LKR) <span style="color:var(--green);font-size:9px">AUTO</span></label>
+            <input type="text" id="ev-total-cost" readonly style="opacity:.7;cursor:not-allowed;color:var(--gold);font-weight:600">
+          </div>
+        </div>
+        <div class="fg3" style="margin-top:4px">
+          <div class="fr">
+            <label>Revenue Achievement % <span style="color:var(--green);font-size:9px">AUTO</span></label>
+            <input type="text" id="ev-rev-pct" readonly style="opacity:.7;cursor:not-allowed;color:var(--gold);font-weight:600">
+          </div>
+          <div class="fr">
+            <label>Cost Per Pax (LKR) <span style="color:var(--green);font-size:9px">AUTO</span></label>
+            <input type="text" id="ev-cpp" readonly style="opacity:.7;cursor:not-allowed;color:var(--gold);font-weight:600">
+          </div>
+          <div class="fr">
+            <label>ROI % <span style="color:var(--green);font-size:9px">AUTO</span></label>
+            <input type="text" id="ev-roi" readonly style="opacity:.7;cursor:not-allowed;color:var(--gold);font-weight:600">
+          </div>
+        </div>
+      </div>
+
+      <div style="background:var(--bg-input);border:1px solid var(--border);border-radius:7px;padding:12px;margin-bottom:12px">
+        <div style="font-size:10px;font-weight:600;color:var(--gold);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">🔗 Link Social Media Ad Campaigns</div>
+        <p style="font-size:11px;color:var(--text-2);margin-bottom:8px">Enter keywords that match campaign names in your Social Media page — the system will pull matching ads automatically.</p>
+        <div class="fr"><label>Campaign Keywords (comma separated)</label><input type="text" id="ev-keywords" placeholder="e.g. Iftar, Ramadan, High Tea"></div>
+      </div>
+
+      <div class="fr"><label>Notes</label><textarea id="ev-notes" placeholder="Event details, venue, offers, marketing notes..."></textarea></div>
+      <input type="hidden" id="ev-id">
+    </div>
+    <div class="modal-ft">
+      <button class="btn btn-out" onclick="closeM('m-ev')">Cancel</button>
+      <button class="btn btn-gold" onclick="saveEvent()" id="ev-save">Save Event</button>
+    </div>
+  </div>
+</div>
+
+<script>
+document.getElementById('sidebar').innerHTML = getSidebarHTML('events');
+requireAuth();
+let D={events:[]}, socialSpends=[];
+const CI={};
+function kc(id){if(CI[id]){CI[id].destroy();delete CI[id];}}
+
+async function load(){
+  showLoader('Loading Events...');
+  try{
+    const r=await DB.getAll();
+    D=r;
+    socialSpends=r.socialSpends||[];
+    D.events=await loadEvents();
+    renderSidebar(r.user,r.sidebarFields);
+    render();
+  }catch(e){toast('Load failed: '+e.message,'e');}
+  hideLoader();
+}
+async function loadEvents(){
+  try{const r=await api('GET',{action:'getSheet',token:DB.getToken(),sheet:'Events'});return(r.data||[]).filter(x=>x.fy==FY);}
+  catch(e){return[];}
+}
+
+function calcMetrics(){
+  const paxT=parseFloat(document.getElementById('ev-pax-t').value)||0;
+  const paxA=parseFloat(document.getElementById('ev-pax-a').value)||0;
+  const revT=parseFloat(document.getElementById('ev-rev-t').value)||0;
+  const revA=parseFloat(document.getElementById('ev-rev-a').value)||0;
+  const adSpend=parseFloat(document.getElementById('ev-ad-spend').value)||0;
+  const otherCost=parseFloat(document.getElementById('ev-other-cost').value)||0;
+  const totalCost=adSpend+otherCost;
+  document.getElementById('ev-pax-pct').value=paxT>0?(paxA/paxT*100).toFixed(1)+'%':'—';
+  document.getElementById('ev-rev-pct').value=revT>0?(revA/revT*100).toFixed(1)+'%':'—';
+  document.getElementById('ev-total-cost').value='LKR '+totalCost.toLocaleString();
+  document.getElementById('ev-cpp').value=paxA>0?'LKR '+(totalCost/paxA).toFixed(0):'—';
+  document.getElementById('ev-roi').value=totalCost>0?(((revA-totalCost)/totalCost)*100).toFixed(1)+'%':'—';
+}
+
+function getLinkedSpend(ev){
+  if(!ev.keywords)return[];
+  const kws=ev.keywords.toLowerCase().split(',').map(k=>k.trim()).filter(Boolean);
+  return socialSpends.filter(s=>kws.some(kw=>s.name&&s.name.toLowerCase().includes(kw)));
+}
+
+function render(){
+  const evs=D.events||[];
+  const sf=document.getElementById('status-filter').value;
+  const filtered=sf==='all'?evs:evs.filter(e=>e.status===sf);
+
+  // KPIs
+  const totRev=evs.filter(e=>e.status==='Completed').reduce((a,e)=>a+Number(e.revenue_actual||0),0);
+  const totSpend=evs.reduce((a,e)=>a+Number(e.ad_spend||0)+Number(e.other_cost||0),0);
+  const totPax=evs.filter(e=>e.status==='Completed').reduce((a,e)=>a+Number(e.pax_actual||0),0);
+  const overallROI=totSpend>0?((totRev-totSpend)/totSpend*100).toFixed(1):0;
+  document.getElementById('ann-kpis').innerHTML=`
+    <div class="kpi k-g"><div class="kpi-lbl">Total Events FY</div><div class="kpi-val">${evs.length}</div><div class="kpi-sub">${evs.filter(e=>e.status==='Completed').length} completed</div></div>
+    <div class="kpi k-b"><div class="kpi-lbl">Total Pax Achieved</div><div class="kpi-val">${totPax.toLocaleString()}</div></div>
+    <div class="kpi k-a"><div class="kpi-lbl">Total Ad Spend</div><div class="kpi-val">${fmt(totSpend)}</div></div>
+    <div class="kpi ${Number(overallROI)>=0?'k-gr':'k-r'}"><div class="kpi-lbl">Overall ROI</div><div class="kpi-val">${overallROI}%</div><div class="kpi-sub">Revenue vs total spend</div></div>`;
+
+  // Charts
+  kc('ch-rev');kc('ch-pax');kc('ch-roi');
+  const evNames=evs.map(e=>(e.name||'').length>18?(e.name||'').slice(0,18)+'…':e.name||'');
+  CI['ch-rev']=new Chart(document.getElementById('ch-rev'),{type:'bar',data:{labels:evNames,datasets:[{label:'Ad Spend',data:evs.map(e=>Number(e.ad_spend||0)+Number(e.other_cost||0)),backgroundColor:'rgba(224,85,85,0.45)',borderColor:'#e05555',borderWidth:1.5,borderRadius:3},{label:'Revenue Actual',data:evs.map(e=>Number(e.revenue_actual||0)),backgroundColor:'rgba(77,184,122,0.45)',borderColor:'#4db87a',borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:'Poppins',size:11},color:'#9a9590'}}},scales:{y:{ticks:{callback:v=>'LKR '+fmtK(v),color:'#9a9590',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},x:{ticks:{color:'#9a9590',font:{size:10}},grid:{display:false}}}}});
+
+  CI['ch-pax']=new Chart(document.getElementById('ch-pax'),{type:'bar',data:{labels:evNames,datasets:[{label:'Pax Target',data:evs.map(e=>Number(e.pax_target||0)),backgroundColor:'rgba(184,149,106,0.3)',borderColor:'#b8956a',borderWidth:1.5,borderRadius:3},{label:'Pax Actual',data:evs.map(e=>Number(e.pax_actual||0)),backgroundColor:'rgba(90,144,216,0.45)',borderColor:'#5a90d8',borderWidth:1.5,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{font:{family:'Poppins',size:11},color:'#9a9590'}}},scales:{y:{ticks:{color:'#9a9590',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},x:{ticks:{color:'#9a9590',font:{size:10}},grid:{display:false}}}}});
+
+  const roiData=evs.map(e=>{const cost=Number(e.ad_spend||0)+Number(e.other_cost||0);return cost>0?((Number(e.revenue_actual||0)-cost)/cost*100).toFixed(1):0;});
+  CI['ch-roi']=new Chart(document.getElementById('ch-roi'),{type:'bar',data:{labels:evNames,datasets:[{label:'ROI %',data:roiData,backgroundColor:roiData.map(v=>Number(v)>=0?'rgba(77,184,122,0.45)':'rgba(224,85,85,0.45)'),borderColor:roiData.map(v=>Number(v)>=0?'#4db87a':'#e05555'),borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>v+'%',color:'#9a9590',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},x:{ticks:{color:'#9a9590',font:{size:10}},grid:{display:false}}}}});
+
+  // Events table
+  let rows='';
+  filtered.forEach(e=>{
+    const paxT=Number(e.pax_target||0),paxA=Number(e.pax_actual||0);
+    const revT=Number(e.revenue_target||0),revA=Number(e.revenue_actual||0);
+    const adS=Number(e.ad_spend||0),otherC=Number(e.other_cost||0),totC=adS+otherC;
+    const paxPct=paxT>0?(paxA/paxT*100).toFixed(0):0;
+    const revPct=revT>0?(revA/revT*100).toFixed(0):0;
+    const roi=totC>0?((revA-totC)/totC*100).toFixed(0):'—';
+    const cpp=paxA>0?(totC/paxA).toFixed(0):'—';
+    const sc={'Planning':'pb','Active':'bgo','Completed':'pgr','Cancelled':'pr'};
+    rows+=`<tr>
+      <td style="font-weight:600;min-width:160px">${e.name||'—'}</td>
+      <td><span class="pill pg">${e.type||'—'}</span></td>
+      <td>${e.date||'—'}</td>
+      <td style="font-size:11px">${e.fy_month>=0?fyLabel(e.fy_month):'—'}</td>
+      <td class="mono">${paxT.toLocaleString()}</td>
+      <td class="mono">${paxA.toLocaleString()}</td>
+      <td><span class="pill ${Number(paxPct)>=100?'pgr':Number(paxPct)>=70?'pa':'pr'}">${paxPct}%</span></td>
+      <td class="mono">${fmt(revT)}</td>
+      <td class="mono">${fmt(revA)}</td>
+      <td><span class="pill ${Number(revPct)>=100?'pgr':Number(revPct)>=70?'pa':'pr'}">${revPct}%</span></td>
+      <td class="mono">${fmt(adS)}</td>
+      <td class="mono">${fmt(totC)}</td>
+      <td class="mono">${cpp==='—'?'—':'LKR '+Number(cpp).toLocaleString()}</td>
+      <td><span class="pill ${Number(roi)>=0?'pgr':'pr'}">${roi}%</span></td>
+      <td><span class="pill ${sc[e.status]||'pb'}">${e.status||'—'}</span></td>
+      <td><div style="display:flex;gap:4px">
+        <button class="btn btn-edit btn-sm" onclick="editEvent('${e.id}')">Edit</button>
+        <button class="btn btn-ghost btn-sm" onclick="delEvent('${e.id}')">✕</button>
+      </div></td>
+    </tr>`;
+  });
+  document.getElementById('ev-tbl').innerHTML=rows||`<tr><td colspan="16"><div class="empty"><div class="ei">🎪</div>No events added yet. Click "+ Add Event" to start.</div></td></tr>`;
+
+  // Ad spend linked table
+  let adRows='';
+  evs.forEach(e=>{
+    const linked=getLinkedSpend(e);
+    linked.forEach(s=>{
+      adRows+=`<tr><td><strong>${e.name}</strong></td><td><span class="pill pg">${s.platform||'—'}</span></td><td>${s.name||'—'}</td><td>${s.date||'—'}</td><td class="mono" style="font-weight:600">${fmt(s.amount)}</td><td class="mono">${Number(s.impressions||0).toLocaleString()}</td><td class="mono">${s.leads||'—'}</td></tr>`;
+    });
+  });
+  document.getElementById('adspend-tbl').innerHTML=adRows||`<tr><td colspan="7"><div class="empty">No linked ad campaigns yet. Add keywords when creating an event to auto-link Social Media campaigns.</div></td></tr>`;
+}
+
+function openEventModal(){
+  document.getElementById('ev-modal-t').textContent='Add Event / Promotion';
+  document.getElementById('ev-save').textContent='Save Event';
+  document.getElementById('ev-id').value='';
+  document.getElementById('ev-date').value=new Date().toISOString().split('T')[0];
+  ['ev-name','ev-keywords','ev-notes'].forEach(id=>document.getElementById(id).value='');
+  ['ev-pax-t','ev-pax-a','ev-rev-t','ev-rev-a','ev-ad-spend','ev-other-cost'].forEach(id=>document.getElementById(id).value='');
+  ['ev-pax-pct','ev-rev-pct','ev-total-cost','ev-cpp','ev-roi'].forEach(id=>document.getElementById(id).value='');
+  openM('m-ev');
+}
+function editEvent(id){
+  const e=(D.events||[]).find(x=>x.id==id);if(!e)return;
+  document.getElementById('ev-modal-t').textContent='Edit Event';
+  document.getElementById('ev-save').textContent='Update Event';
+  document.getElementById('ev-id').value=id;
+  document.getElementById('ev-name').value=e.name||'';
+  document.getElementById('ev-type').value=e.type||'High Tea';
+  document.getElementById('ev-date').value=e.date||'';
+  document.getElementById('ev-status').value=e.status||'Planning';
+  document.getElementById('ev-pax-t').value=e.pax_target||'';
+  document.getElementById('ev-pax-a').value=e.pax_actual||'';
+  document.getElementById('ev-rev-t').value=e.revenue_target||'';
+  document.getElementById('ev-rev-a').value=e.revenue_actual||'';
+  document.getElementById('ev-ad-spend').value=e.ad_spend||'';
+  document.getElementById('ev-other-cost').value=e.other_cost||'';
+  document.getElementById('ev-keywords').value=e.keywords||'';
+  document.getElementById('ev-notes').value=e.notes||'';
+  calcMetrics();
+  openM('m-ev');
+}
+async function saveEvent(){
+  const eid=document.getElementById('ev-id').value;
+  const name=document.getElementById('ev-name').value.trim();
+  const date=document.getElementById('ev-date').value;
+  if(!name){toast('Event name required.','e');return;}
+  const paxT=parseFloat(document.getElementById('ev-pax-t').value)||0;
+  const paxA=parseFloat(document.getElementById('ev-pax-a').value)||0;
+  const revT=parseFloat(document.getElementById('ev-rev-t').value)||0;
+  const revA=parseFloat(document.getElementById('ev-rev-a').value)||0;
+  const adS=parseFloat(document.getElementById('ev-ad-spend').value)||0;
+  const otherC=parseFloat(document.getElementById('ev-other-cost').value)||0;
+  const totC=adS+otherC;
+  const p={
+    fy:FY, fy_month:date?fyIdx(date):fyIdxNow(), date, name,
+    type:document.getElementById('ev-type').value,
+    status:document.getElementById('ev-status').value,
+    pax_target:paxT, pax_actual:paxA,
+    revenue_target:revT, revenue_actual:revA,
+    ad_spend:adS, other_cost:otherC, total_cost:totC,
+    pax_pct:paxT>0?(paxA/paxT*100).toFixed(1):0,
+    rev_pct:revT>0?(revA/revT*100).toFixed(1):0,
+    roi:totC>0?((revA-totC)/totC*100).toFixed(1):0,
+    cost_per_pax:paxA>0?(totC/paxA).toFixed(0):0,
+    keywords:document.getElementById('ev-keywords').value,
+    notes:document.getElementById('ev-notes').value
+  };
+  showLoader(eid?'Updating...':'Saving...');
+  try{
+    if(eid)await DB.update('EVENTS',eid,p);
+    else await DB.add('EVENTS',p);
+    D.events=await loadEvents();
+    closeM('m-ev');render();
+    toast(eid?'Event updated!':'Event saved!');
+  }catch(e){toast('Failed: '+e.message,'e');}
+  hideLoader();
+}
+async function delEvent(id){
+  if(!confirm('Delete this event?'))return;
+  showLoader('Deleting...');
+  try{await DB.remove('EVENTS',id);D.events=await loadEvents();render();toast('Deleted.');}
+  catch(e){toast('Failed: '+e.message,'e');}
+  hideLoader();
+}
+load();
+</script>
+</body>
+</html>

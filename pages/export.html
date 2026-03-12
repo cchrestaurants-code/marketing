@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Export Data — CC Marketing Hub</title>
+<link rel="stylesheet" href="../css/main.css">
+<script src="../js/app.js"></script>
+<script src="../js/sidebar.js"></script>
+</head>
+<body>
+<div id="loader"><div class="spin"></div><div id="loader-msg">Loading...</div></div>
+<aside class="sidebar" id="sidebar"></aside>
+
+<main class="main">
+  <header class="topbar">
+    <div><div class="tb-title">Export Data</div><div class="tb-sub">Download all your data as Excel-compatible CSV files</div></div>
+    <div class="tb-r"><span class="fy-chip">FY 2026–27</span></div>
+  </header>
+
+  <div class="content">
+    <div class="sec" style="margin-top:0"><div class="sec-t">Export Options</div></div>
+
+    <!-- Main export card -->
+    <div style="background:var(--bg-3);border:1px solid var(--border-g);border-radius:11px;padding:24px;max-width:680px;margin-bottom:18px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
+        <div style="width:44px;height:44px;background:var(--gold-bg);border:1px solid var(--border-g);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📊</div>
+        <div>
+          <div style="font-size:14px;font-weight:600;color:var(--text)">Export All Data — FY 2026–27</div>
+          <div style="font-size:11.5px;color:var(--text-2);margin-top:2px">Downloads each module as a separate CSV file — opens directly in Microsoft Excel</div>
+        </div>
+      </div>
+
+      <div id="export-summary" style="background:var(--bg-input);border:1px solid var(--border);border-radius:7px;padding:12px;margin-bottom:16px;font-size:12px;color:var(--text-2)">
+        Loading data summary...
+      </div>
+
+      <div style="display:flex;flex-wrap:wrap;gap:8px">
+        <button class="btn btn-gold" onclick="exportAll()" id="export-all-btn">
+          ⬇ Download All (ZIP)
+        </button>
+        <button class="btn btn-out" onclick="exportSheet('budget')" >⬇ Budget & Spends</button>
+        <button class="btn btn-out" onclick="exportSheet('social')" >⬇ Social Media</button>
+        <button class="btn btn-out" onclick="exportSheet('content')">⬇ Content Log</button>
+        <button class="btn btn-out" onclick="exportSheet('email')"  >⬇ Email Campaigns</button>
+        <button class="btn btn-out" onclick="exportSheet('events')" >⬇ Events & Promos</button>
+        <button class="btn btn-out" onclick="exportSheet('influencers')">⬇ Influencers</button>
+        <button class="btn btn-out" onclick="exportSheet('suppliers')">⬇ Suppliers & Print</button>
+      </div>
+    </div>
+
+    <!-- How to open in Excel -->
+    <div style="background:var(--bg-3);border:1px solid var(--border);border-radius:9px;padding:18px;max-width:680px;margin-bottom:18px">
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:10px">📋 How to open CSV files in Excel</div>
+      <div style="font-size:12px;color:var(--text-2);line-height:1.8">
+        <div>1. Download the CSV file</div>
+        <div>2. Open Microsoft Excel → <strong style="color:var(--text)">File → Open → Browse</strong></div>
+        <div>3. Select the downloaded <code style="color:var(--gold)">.csv</code> file</div>
+        <div>4. Excel will open it with all columns formatted correctly</div>
+        <div style="margin-top:8px;color:var(--text-2)">💡 <em>Tip: All amounts are in LKR. Dates are in YYYY-MM-DD format for easy sorting.</em></div>
+      </div>
+    </div>
+
+    <!-- Direct Google Sheets link -->
+    <div style="background:var(--bg-3);border:1px solid var(--border);border-radius:9px;padding:18px;max-width:680px">
+      <div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px">🔗 Access Your Data Directly in Google Sheets</div>
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:12px">Your data lives in Google Sheets — you can view, filter, sort, and export from there at any time. Google Sheets also lets you download as Excel (.xlsx) directly.</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-out" onclick="openGSheets()">↗ Open Google Sheet</button>
+        <button class="btn btn-out" onclick="toast('Go to Google Sheet → File → Download → Microsoft Excel (.xlsx)','i')">How to download as .xlsx</button>
+      </div>
+    </div>
+
+    <!-- Export log -->
+    <div id="export-log" style="margin-top:16px;max-width:680px"></div>
+  </div>
+</main>
+
+<script>
+document.getElementById('sidebar').innerHTML = getSidebarHTML('export');
+requireAuth();
+let D = {};
+
+async function load() {
+  showLoader('Loading...');
+  try {
+    const r = await DB.getAll();
+    D = r;
+    // Load extra sheets
+    D.emailCampaigns = await loadExtra('EmailCampaigns');
+    D.contentLog     = await loadExtra('ContentLog');
+    D.events         = await loadExtra('Events');
+    renderSidebar(r.user, r.sidebarFields);
+    renderSummary();
+  } catch(e) { toast('Load failed: '+e.message,'e'); }
+  hideLoader();
+}
+
+async function loadExtra(sheet) {
+  try { const r = await api('GET',{action:'getSheet',token:DB.getToken(),sheet}); return r.data||[]; }
+  catch(e) { return []; }
+}
+
+function renderSummary() {
+  const rows = [
+    ['Budget Line Items',   (D.lineItems||[]).length],
+    ['Spend Entries',       (D.spends||[]).length],
+    ['Social Campaigns',    (D.socialSpends||[]).length],
+    ['Content Posts',       (D.contentLog||[]).length],
+    ['Email Campaigns',     (D.emailCampaigns||[]).length],
+    ['Events & Promos',     (D.events||[]).length],
+    ['Influencers',         (D.influencers||[]).length],
+    ['Engagements',         (D.engagements||[]).length],
+    ['Suppliers',           (D.suppliers||[]).length],
+    ['Print Orders',        (D.printOrders||[]).length],
+  ];
+  const total = rows.reduce((a,r)=>a+r[1],0);
+  document.getElementById('export-summary').innerHTML =
+    `<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px 16px">` +
+    rows.map(r=>`<div style="display:flex;justify-content:space-between"><span>${r[0]}</span><strong style="color:var(--gold)">${r[1]} rows</strong></div>`).join('') +
+    `</div><div style="border-top:1px solid var(--border);margin-top:10px;padding-top:8px;font-weight:600;color:var(--text)">Total: ${total} rows across all modules</div>`;
+}
+
+// ── CSV helpers ─────────────────────────────────────────────────────
+function toCSV(rows) {
+  if (!rows.length) return 'No data';
+  const headers = Object.keys(rows[0]);
+  const lines = [headers.join(',')];
+  rows.forEach(row => {
+    lines.push(headers.map(h => {
+      const v = row[h] === null || row[h] === undefined ? '' : String(row[h]);
+      return v.includes(',') || v.includes('"') || v.includes('\n')
+        ? '"' + v.replace(/"/g, '""') + '"' : v;
+    }).join(','));
+  });
+  return lines.join('\n');
+}
+
+function downloadCSV(filename, csvContent) {
+  const BOM = '\uFEFF'; // Excel UTF-8 BOM
+  const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  logExport(filename);
+}
+
+function logExport(filename) {
+  const log = document.getElementById('export-log');
+  const now = new Date().toLocaleTimeString();
+  const item = document.createElement('div');
+  item.style.cssText = 'background:var(--green-bg);border:1px solid rgba(77,184,122,.2);border-radius:6px;padding:8px 12px;font-size:12px;color:var(--green);margin-bottom:6px';
+  item.innerHTML = `✓ Downloaded: <strong>${filename}</strong> <span style="color:var(--text-2);font-size:10.5px">at ${now}</span>`;
+  log.insertBefore(item, log.firstChild);
+}
+
+// ── Per-sheet exports ───────────────────────────────────────────────
+function exportSheet(type) {
+  const month = m => FY_MONTHS[m] ? FY_MONTHS[m] + ' ' + (m<9?2026:2027) : '';
+
+  switch(type) {
+    case 'budget': {
+      const rows = (D.spends||[]).map(s => {
+        const li = (D.lineItems||[]).find(l=>l.id==s.line_item_id);
+        return {
+          'Date': s.date, 'Month': month(s.fy_month), 'Line Item': li?.name||'',
+          'Category': li?.category||'', 'Description': s.description,
+          'Amount (LKR)': s.amount, 'Reference': s.reference, 'Notes': s.notes
+        };
+      });
+      downloadCSV('CC_Budget_Spends_FY2026-27.csv', toCSV(rows));
+      // Also export monthly budgets
+      const brows = (D.monthlyBudgets||[]).map(b => {
+        const li = (D.lineItems||[]).find(l=>l.id==b.line_item_id);
+        return { 'Line Item': li?.name||b.line_item_id, 'Month': month(b.month), 'Budget (LKR)': b.amount };
+      });
+      setTimeout(()=>downloadCSV('CC_Monthly_Budgets_FY2026-27.csv', toCSV(brows)), 500);
+      break;
+    }
+    case 'social': {
+      const rows = (D.socialSpends||[]).map(s => ({
+        'Date': s.date, 'Month': month(s.fy_month), 'Platform': s.platform,
+        'Type': s.type, 'Objective': s.objective, 'Campaign Name': s.name,
+        'Spend (LKR)': s.amount, 'Impressions': s.impressions, 'Reach': s.reach,
+        'Engagements': s.engagements, 'Leads': s.leads, 'Revenue (LKR)': s.revenue,
+        'New Followers': s.new_followers, 'New Page Likes': s.new_page_likes, 'CTR %': s.ctr,
+        'Notes': s.notes
+      }));
+      const pm = (D.pageMetrics||[]).map(p => ({
+        'Month': month(p.fy_month), 'Platform': p.platform,
+        'Followers Start': p.followers_start, 'Followers End': p.followers_end,
+        'Net Growth': Number(p.followers_end||0)-Number(p.followers_start||0),
+        'Page Likes': p.page_likes, 'Engagement Rate %': p.engagement_rate
+      }));
+      downloadCSV('CC_Social_Campaigns_FY2026-27.csv', toCSV(rows));
+      setTimeout(()=>downloadCSV('CC_Page_Metrics_FY2026-27.csv', toCSV(pm)), 500);
+      break;
+    }
+    case 'content': {
+      const rows = (D.contentLog||[]).map(p => ({
+        'Date': p.date, 'Month': month(p.fy_month), 'Platform': p.platform,
+        'Content Type': p.content_type, 'Title': p.title,
+        'Reach': p.reach, 'Impressions': p.impressions, 'Views': p.views,
+        'Likes': p.likes, 'Comments': p.comments, 'Shares': p.shares,
+        'Saves': p.saves, 'Link Clicks': p.link_clicks,
+        'Engagement Rate %': p.engagement_rate, 'Post URL': p.post_link
+      }));
+      downloadCSV('CC_Content_Log_FY2026-27.csv', toCSV(rows));
+      break;
+    }
+    case 'email': {
+      const rows = (D.emailCampaigns||[]).map(c => ({
+        'Date': c.date, 'Month': month(c.fy_month), 'Campaign Name': c.name,
+        'Provider': c.provider, 'Segment': c.segment,
+        'Emails Sent': c.sent, 'Delivered': c.delivered, 'Opened': c.opened,
+        'Clicked': c.clicked, 'Unsubscribed': c.unsubscribed, 'Bounced': c.bounced,
+        'Open Rate %': c.open_rate, 'Click Rate %': c.click_rate, 'Unsub Rate %': c.unsub_rate,
+        'Cost (LKR)': c.cost, 'Revenue Attributed (LKR)': c.revenue,
+        'ROI %': c.cost>0?(((c.revenue-c.cost)/c.cost)*100).toFixed(1):'',
+        'Notes': c.notes
+      }));
+      downloadCSV('CC_Email_Campaigns_FY2026-27.csv', toCSV(rows));
+      break;
+    }
+    case 'events': {
+      const rows = (D.events||[]).map(e => ({
+        'Event Name': e.name, 'Type': e.type, 'Date': e.date,
+        'Month': month(e.fy_month), 'Status': e.status,
+        'Pax Target': e.pax_target, 'Pax Actual': e.pax_actual, 'Pax %': e.pax_pct,
+        'Revenue Target (LKR)': e.revenue_target, 'Revenue Actual (LKR)': e.revenue_actual,
+        'Revenue %': e.rev_pct, 'Ad Spend (LKR)': e.ad_spend,
+        'Other Cost (LKR)': e.other_cost, 'Total Cost (LKR)': e.total_cost,
+        'Cost Per Pax (LKR)': e.cost_per_pax, 'ROI %': e.roi,
+        'Keywords': e.keywords, 'Notes': e.notes
+      }));
+      downloadCSV('CC_Events_Promotions_FY2026-27.csv', toCSV(rows));
+      break;
+    }
+    case 'influencers': {
+      const rows = (D.influencers||[]).map(i => ({
+        'Name': i.name, 'Handle': i.handle, 'Platform': i.platform,
+        'Niche': i.niche, 'Followers': i.followers,
+        'Engagement Rate %': i.engagement_rate, 'Typical Fee (LKR)': i.typical_fee,
+        'Tier': i.tier, 'Profile Link': i.profile_link, 'Notes': i.notes
+      }));
+      const erows = (D.engagements||[]).map(e => {
+        const inf = (D.influencers||[]).find(i=>i.id==e.influencer_id);
+        return {
+          'Month': month(e.fy_month), 'Influencer': inf?.name||'',
+          'Platform': inf?.platform||'', 'Content Type': e.content_type,
+          'Campaign': e.campaign, 'Fee (LKR)': e.fee,
+          'Status': e.status, 'Notes': e.notes
+        };
+      });
+      downloadCSV('CC_Influencer_Roster_FY2026-27.csv', toCSV(rows));
+      setTimeout(()=>downloadCSV('CC_Influencer_Engagements_FY2026-27.csv', toCSV(erows)), 500);
+      break;
+    }
+    case 'suppliers': {
+      const rows = (D.suppliers||[]).map(s => ({
+        'Supplier Name': s.name, 'Category': s.category,
+        'Contact Person': s.contact_person, 'Phone': s.phone, 'Notes': s.notes
+      }));
+      const orows = (D.printOrders||[]).map(o => {
+        const sup = (D.suppliers||[]).find(s=>s.id==o.supplier_id);
+        return {
+          'Date': o.date, 'Month': month(o.fy_month), 'Supplier': sup?.name||'',
+          'Description': o.description, 'Qty': o.qty,
+          'Unit Price (LKR)': o.unit_price,
+          'Total (LKR)': Number(o.qty||1)*Number(o.unit_price||0),
+          'Notes': o.notes
+        };
+      });
+      downloadCSV('CC_Suppliers_FY2026-27.csv', toCSV(rows));
+      setTimeout(()=>downloadCSV('CC_Print_Orders_FY2026-27.csv', toCSV(orows)), 500);
+      break;
+    }
+  }
+}
+
+// ── Export ALL as multiple CSVs ──────────────────────────────────────
+async function exportAll() {
+  const btn = document.getElementById('export-all-btn');
+  btn.disabled = true;
+  btn.textContent = 'Downloading...';
+  showLoader('Preparing all exports...');
+
+  const sheets = ['budget','social','content','email','events','influencers','suppliers'];
+  for (let i = 0; i < sheets.length; i++) {
+    await new Promise(resolve => setTimeout(resolve, i * 600));
+    exportSheet(sheets[i]);
+    document.getElementById('loader-msg').textContent = `Downloading ${i+1}/${sheets.length}...`;
+  }
+
+  hideLoader();
+  btn.disabled = false;
+  btn.textContent = '⬇ Download All (ZIP)';
+  toast('All files downloaded! Check your Downloads folder.', 's');
+}
+
+function openGSheets() {
+  // Try to get sheet ID from localStorage, otherwise prompt
+  const stored = localStorage.getItem('cc_sheet_id');
+  if (stored) {
+    window.open('https://docs.google.com/spreadsheets/d/'+stored, '_blank');
+  } else {
+    const id = prompt('Enter your Google Sheet ID (from the URL):');
+    if (id) {
+      localStorage.setItem('cc_sheet_id', id.trim());
+      window.open('https://docs.google.com/spreadsheets/d/'+id.trim(), '_blank');
+    }
+  }
+}
+
+load();
+</script>
+</body>
+</html>
