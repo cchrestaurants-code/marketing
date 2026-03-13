@@ -3,7 +3,7 @@
 // Deploy this as a Web App (see SETUP_GUIDE for instructions)
 // ═══════════════════════════════════════════════════════════════════
 
-const SPREADSHEET_ID = 'YOUR_SPREADSHEET_ID_HERE'; // ← Replace after creating the sheet
+const SPREADSHEET_ID = '1aMXgqFvREDqRbgHdtK3tv94pkT2WymxczxQ_a79uHSI'; // ← Replace after creating the sheet
 
 // Sheet names — must match exactly
 const SHEETS = {
@@ -19,6 +19,13 @@ const SHEETS = {
   PRINT_ORDERS:    'PrintOrders',
   SIDEBAR_FIELDS:  'SidebarFields',
   SESSIONS:        'Sessions',
+  EMAIL_CAMPAIGNS: 'EmailCampaigns',
+  CONTENT_LOG:     'ContentLog',
+  EVENTS:           'Events',
+  FUNC_INQUIRIES:   'FuncInquiries',
+  FUNC_BUDGETS:      'FuncBudgets',
+  VOUCHERS:          'Vouchers',
+  KISS_FM_VOUCHERS:  'KissFMVouchers',
 };
 
 // ── CORS helper ───────────────────────────────────────────────────
@@ -361,3 +368,94 @@ function setupSheets() {
   Logger.log('✅ Setup complete! All sheets created and seeded.');
   return 'Setup complete!';
 }
+
+// ── ADD NEW SHEETS FUNCTION (run this once to add the 4 new sheets) ──
+function addNewSheets() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  
+  const newSchema = {
+    EmailCampaigns: ['id','fy','fy_month','date','name','provider','segment','sent','delivered','opened','clicked','unsubscribed','bounced','open_rate','click_rate','unsub_rate','cost','revenue','notes','created_at','updated_at'],
+    ContentLog:     ['id','fy','fy_month','date','platform','content_type','title','reach','impressions','views','likes','comments','shares','saves','link_clicks','engagement_rate','post_link','created_at','updated_at'],
+    Events:         ['id','fy','fy_month','date','name','type','status','pax_target','pax_actual','pax_pct','revenue_target','revenue_actual','rev_pct','ad_spend','other_cost','total_cost','cost_per_pax','roi','keywords','notes','created_at','updated_at'],
+  };
+  
+  Object.entries(newSchema).forEach(([name, headers]) => {
+    let sheet = ss.getSheetByName(name);
+    if (!sheet) {
+      sheet = ss.insertSheet(name);
+      Logger.log('Created sheet: ' + name);
+    } else {
+      Logger.log('Sheet already exists: ' + name);
+    }
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    sheet.getRange(1, 1, 1, headers.length)
+      .setBackground('#1a1a2e')
+      .setFontColor('#b8956a')
+      .setFontWeight('bold');
+    sheet.setFrozenRows(1);
+  });
+  
+  Logger.log('✅ New sheets added: EmailCampaigns, ContentLog, Events');
+  return 'New sheets added!';
+}
+
+// ── ADD FUNCTIONS SHEETS (run once after uploading this file) ─────
+// Run this from Apps Script editor: select addFunctionsSheets, press ▶
+function addFunctionsSheets() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  
+  const schema = {
+    FuncInquiries: [
+      'id','fy','fy_month','inquiry_date','guest_name','phone','email',
+      'source','event_type','event_date','pax','venue','menu_type',
+      'food_revenue','bev_revenue','total_revenue',
+      'status','followup_date','lost_reason','remarks','repeat_of',
+      'created_at','updated_at'
+    ],
+    FuncBudgets: [
+      'id','fy','fy_month','budget_type','amount','created_at','updated_at'
+    ],
+  };
+  
+  Object.entries(schema).forEach(([name, headers]) => {
+    let sheet = ss.getSheetByName(name);
+    if (!sheet) {
+      sheet = ss.insertSheet(name);
+      Logger.log('✅ Created: ' + name);
+    } else {
+      Logger.log('ℹ Already exists: ' + name);
+    }
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    sheet.getRange(1, 1, 1, headers.length)
+      .setBackground('#1a1a2e').setFontColor('#b8956a').setFontWeight('bold');
+    sheet.setFrozenRows(1);
+  });
+
+  // Also register the sheet keys in SHEETS constant (for reference)
+  Logger.log('✅ FuncInquiries and FuncBudgets sheets ready.');
+  Logger.log('You can now use the Functions & Events page.');
+  return 'Functions sheets created!';
+}
+
+// ── ADD v4 SHEETS (Vouchers, KissFM) — run once ──────────────────
+function addV4Sheets() {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const schema = {
+    Vouchers: ['id','fy','fy_month','voucher_code','voucher_type','sub_type','issued_to','requested_by','issue_date','valid_from','expiry_date','redeem_date','status','notes','created_at','updated_at'],
+    KissFMVouchers: ['id','fy','fy_month','voucher_code','voucher_type','issued_to','issue_date','valid_from','expiry_date','redeem_date','status','notes','source','created_at','updated_at'],
+  };
+  Object.entries(schema).forEach(([name,headers])=>{
+    let s=ss.getSheetByName(name);
+    if(!s){s=ss.insertSheet(name);Logger.log('Created: '+name);}
+    s.getRange(1,1,1,headers.length).setValues([headers])
+     .setBackground('#1a1a2e').setFontColor('#C8102E').setFontWeight('bold');
+    s.setFrozenRows(1);
+  });
+  Logger.log('v4 sheets done');
+  return 'Vouchers + KissFMVouchers created!';
+}
+
+// ── getSheet handler (add to doGet switch if not present) ─────────
+// Make sure your doGet switch includes:
+//   case 'getSheet': return doGetSheet(e, ss);
+// And doGetSheet filters by fy if provided
