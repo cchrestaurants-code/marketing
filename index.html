@@ -62,7 +62,7 @@ async function doLogin(){
   err.style.display='none';
   try{
     const r=await api('GET',{action:'login',username:u,password:p});
-    saveSession({token:r.token,username:r.username,role:r.role});
+    saveSession({token:r.token,username:r.user.username,role:r.user.role});
     window.location.href='pages/dashboard.html';
   }catch(e){
     err.style.display='block';
