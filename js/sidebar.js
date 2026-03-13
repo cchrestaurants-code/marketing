@@ -1,4 +1,3 @@
-// Shared sidebar template — included by all pages
 function getSidebarHTML(activePage) {
   const mktg = [
     { id:'dashboard',   href:'dashboard.html',   label:'Dashboard',         icon:'<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>' },
@@ -12,30 +11,32 @@ function getSidebarHTML(activePage) {
   ];
   const fnc = [
     { id:'functions',   href:'functions.html',   label:'Functions & Events',icon:'<path d="M8 6h13"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M3 6h.01"/><path d="M3 12h.01"/><path d="M3 18h.01"/>' },
+    { id:'vouchers',    href:'vouchers.html',     label:'Voucher Tracker',   icon:'<rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/>' },
+    { id:'compare',     href:'compare.html',      label:'Year Comparison',   icon:'<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>' },
   ];
   const cfg = [
     { id:'settings',    href:'settings.html',    label:'Settings',          icon:'<circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/>' },
     { id:'export',      href:'export.html',      label:'Export Data',       icon:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>' },
   ];
 
-  const mkItem = p => `
-    <a class="sb-item ${activePage===p.id?'active':''}" href="${p.href}">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">${p.icon}</svg>
-      ${p.label}
-    </a>`;
+  const mkItem = p => `<a class="sb-item ${activePage===p.id?'active':''}" href="${p.href}">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9">${p.icon}</svg>${p.label}</a>`;
 
   return `
     <div class="sb-brand">
       <div class="sb-logo">
-        <div class="sb-icon">🏨</div>
-        <div><div class="sb-hotel">Colombo Court<br>Hotel &amp; Spa</div><div class="sb-dept">Marketing Hub</div></div>
+        <div class="sb-logo-mark">CC</div>
+        <div>
+          <div class="sb-hotel">Colombo Court<br>Hotel &amp; Spa</div>
+          <div class="sb-dept">Marketing Hub</div>
+        </div>
       </div>
-      <div class="sb-fy">FY Apr 2026 – Mar 2027</div>
+      <div class="sb-fy" id="sb-fy-wrap"><span style="font-size:9.5px;color:var(--red-light)">FY Loading…</span></div>
     </div>
     <nav class="sb-nav">
       <div class="sb-sec">Marketing</div>
       ${mktg.map(mkItem).join('')}
-      <div class="sb-sec">Functions &amp; Events</div>
+      <div class="sb-sec">Functions, Events &amp; Vouchers</div>
       ${fnc.map(mkItem).join('')}
       <div class="sb-sec">Quick Links</div>
       <div id="sb-extra" class="sb-extra"></div>
@@ -43,10 +44,13 @@ function getSidebarHTML(activePage) {
       ${cfg.map(mkItem).join('')}
     </nav>
     <div class="sb-foot">
-      <div style="flex:1">
-        <div class="sb-uname" id="sb-uname">—</div>
-        <div class="sb-role" id="sb-role">—</div>
+      <div class="sb-foot-user">
+        <div>
+          <div class="sb-uname" id="sb-uname">—</div>
+          <div class="sb-role" id="sb-role">—</div>
+        </div>
+        <button class="btn-logout" onclick="logout()">Sign out</button>
       </div>
-      <button class="btn-logout" onclick="logout()">Sign out</button>
+      <div class="sb-credit">Created by <span>Shazwan Yoonus</span></div>
     </div>`;
 }
