@@ -46,7 +46,7 @@
     <div class="kiss-banner">
       <div>
         <div class="kiss-title">📻 KissFM Agreement</div>
-        <div class="kiss-sub">12 vouchers per month · Unique codes · Separate agreement tracking</div>
+        <div class="kiss-sub" id="kiss-quota-sub">12 vouchers per month · Unique codes · Separate agreement tracking</div>
       </div>
       <div class="kiss-stats" id="kiss-stats">
         <div class="kiss-stat"><div class="kv" id="ks-issued">0</div><div class="kl">Issued This Month</div></div>
@@ -121,7 +121,7 @@
       </div>
       <!-- Annual KissFM summary -->
       <div class="tc">
-        <div class="tc-head"><div class="tc-title">KissFM Annual Summary</div><div style="font-size:11px;color:var(--text-2)">Quota: 12/month · 144/year</div></div>
+        <div class="tc-head"><div class="tc-title">KissFM Annual Summary</div><div style="font-size:11px;color:var(--text-2)">Quota: ${getKissQuota()}/month · ${getKissQuota()*12}/year</div></div>
         <table>
           <thead><tr><th>Month</th><th>Issued</th><th>Quota</th><th>Remaining</th><th>Redeemed</th><th>Expired</th><th>Active</th><th>Redemption Rate</th></tr></thead>
           <tbody id="kiss-annual-tbl"></tbody>
@@ -193,7 +193,7 @@
     <div class="modal-hd">
       <div>
         <div class="modal-t" id="kiss-modal-title">Add KissFM Voucher</div>
-        <div style="font-size:10.5px;color:var(--text-2);margin-top:2px">KissFM Agreement · 12 vouchers per month</div>
+        <div style="font-size:10.5px;color:var(--text-2);margin-top:2px" id="kiss-modal-quota">KissFM Agreement · 12 vouchers per month</div>
       </div>
       <button class="modal-x" onclick="closeM('m-kiss')">×</button>
     </div>
@@ -238,16 +238,14 @@ document.getElementById('sidebar').innerHTML = getSidebarHTML('vouchers');
 requireAuth();
 document.getElementById('fy-label-top').textContent = `${FY}–${String(FY+1).slice(-2)}`;
 
-// Default voucher types with sub-types (editable via Settings later)
-const DEFAULT_V_TYPES = {
-  'Hotel Stay':     ['Room Only','Bed & Breakfast','Half Board','Full Board'],
-  'Dinner':         ['Dinner for 2','Dinner for 1'],
-  'High Tea':       ['High Tea Platter for 2'],
-  'Spa':            ['Discount on Treatments','Free Treatment'],
-  'Discount':       ['25% Off – Cloud Cafe','25% Off – Amber Poolside','10% Off Total Bill','15% Off Total Bill'],
-  'Complimentary':  ['Welcome Drink','Dessert','Room Upgrade'],
-  'Other':          ['Custom'],
-};
+// Load dropdown options from localStorage (editable in Settings)
+function getDD(k, defaults){ try{ const s=localStorage.getItem('cc_dd_'+k); return s?JSON.parse(s):defaults; }catch(e){return defaults;} }
+function getKissQuota(){ return parseInt(localStorage.getItem('cc_kiss_quota'))||12; }
+
+// Voucher types come from Settings → editable dropdowns
+function getVoucherTypes(){ return getDD('voucher_types',['Hotel Stay','Dinner','High Tea','Spa','Discount','Complimentary','Other']); }
+function getVoucherSubtypes(){ return getDD('voucher_subtypes',['Room Only','Bed & Breakfast','Half Board','Full Board','Dinner for 2','Dinner for 1','High Tea for 1','High Tea for 2','High Tea for 4','High Tea Platter for 2','Spa Treatment (Free)','Spa Discount 20%','Spa Discount 25%','20% Off Total Bill','25% Off Total Bill','25% Off – Cloud Cafe','25% Off – Amber Poolside','Welcome Drink','Room Upgrade','Custom']); }
+function getKissTypes(){ return getDD('kiss_voucher_types',['Hotel Stay','Dinner for 2','High Tea for 2','Spa Treatment','Discount Voucher']); }
 
 let VD = { vouchers:[], kissVouchers:[] };
 let vCM = fyIdxNow(), kissCM = fyIdxNow();
@@ -273,19 +271,19 @@ async function fetchSheet(name){ try{ const r=await api('GET',{action:'getSheet'
 async function reload(){ VD.vouchers=await fetchSheet('Vouchers'); VD.kissVouchers=await fetchSheet('KissFMVouchers'); }
 
 function populateTypeFilters(){
-  const types = Object.keys(DEFAULT_V_TYPES);
+  const vTypes = getVoucherTypes();
+  const kTypes = getKissTypes();
   const f = document.getElementById('vf-type');
-  f.innerHTML = '<option value="">All Types</option>' + types.map(t=>`<option>${t}</option>`).join('');
-  // Modal type selects
+  f.innerHTML = '<option value="">All Types</option>' + vTypes.map(t=>`<option>${t}</option>`).join('');
   const vs = document.getElementById('v-type');
-  vs.innerHTML = types.map(t=>`<option>${t}</option>`).join('');
+  vs.innerHTML = vTypes.map(t=>`<option>${t}</option>`).join('');
   const ks = document.getElementById('k-type');
-  ks.innerHTML = types.map(t=>`<option>${t}</option>`).join('');
+  ks.innerHTML = kTypes.map(t=>`<option>${t}</option>`).join('');
   updateSubTypes();
 }
 function updateSubTypes(){
-  const type = document.getElementById('v-type').value;
-  const subs = DEFAULT_V_TYPES[type]||[];
+  // All subtypes shown regardless of type — full editable list from Settings
+  const subs = getVoucherSubtypes();
   document.getElementById('v-subtype').innerHTML = subs.map(s=>`<option>${s}</option>`).join('');
 }
 
@@ -384,8 +382,11 @@ function updateKissBanner(){
   const m=kissCM; const kv=VD.kissVouchers||[];
   const thisMonth=kv.filter(x=>x.fy_month==m);
   document.getElementById('ks-issued').textContent=thisMonth.length;
-  document.getElementById('ks-remaining').textContent=Math.max(0,12-thisMonth.length);
+  const QUOTA=getKissQuota();
+  document.getElementById('ks-remaining').textContent=Math.max(0,QUOTA-thisMonth.length);
   document.getElementById('ks-redeemed').textContent=thisMonth.filter(x=>x.status==='Redeemed').length;
+  // Update banner sub text
+  document.querySelector('.kiss-sub').textContent=QUOTA+' vouchers per month · Unique codes · Separate agreement tracking';
   document.getElementById('ks-expired').textContent=thisMonth.filter(x=>x.status==='Expired').length;
 }
 
@@ -393,15 +394,16 @@ function renderKiss(){
   const lbl=fyLabel(kissCM);
   document.getElementById('kiss-tbl-lbl').textContent=lbl;
   const kv=(VD.kissVouchers||[]).filter(x=>x.fy_month==kissCM);
-  document.getElementById('kiss-tbl-count').textContent=kv.length+'/12';
+  document.getElementById('kiss-tbl-count').textContent=kv.length+'/'+getKissQuota();
 
   const active=kv.filter(x=>x.status==='Active').length;
   const redeemed=kv.filter(x=>x.status==='Redeemed').length;
   const expired=kv.filter(x=>x.status==='Expired').length;
-  const remaining=Math.max(0,12-kv.length);
+  const QOTA=getKissQuota();
+  const remaining=Math.max(0,QOTA-kv.length);
 
   document.getElementById('kiss-kpis').innerHTML=`
-    <div class="kpi k-g"><div class="kpi-lbl">Issued — ${lbl}</div><div class="kpi-val">${kv.length}<span style="font-size:13px;color:var(--text-2)">/12</span></div>${progBar(kv.length/12*100)}</div>
+    <div class="kpi k-g"><div class="kpi-lbl">Issued — ${lbl}</div><div class="kpi-val">${kv.length}<span style="font-size:13px;color:var(--text-2)">/${getKissQuota()}</span></div>${progBar(kv.length/getKissQuota()*100)}</div>
     <div class="kpi k-gr"><div class="kpi-lbl">Redeemed</div><div class="kpi-val">${redeemed}</div><span class="kpi-badge bgg">${kv.length>0?(redeemed/kv.length*100).toFixed(0):0}% rate</span></div>
     <div class="kpi k-a"><div class="kpi-lbl">Remaining Quota</div><div class="kpi-val">${remaining}</div><div class="kpi-sub">vouchers left to issue</div></div>
     <div class="kpi k-r"><div class="kpi-lbl">Expired / Active</div><div class="kpi-val">${expired} / ${active}</div></div>`;
@@ -432,9 +434,9 @@ function renderKiss(){
     const m=(VD.kissVouchers||[]).filter(x=>x.fy_month==mi);
     const issued=m.length, redeemed=m.filter(x=>x.status==='Redeemed').length;
     const expired=m.filter(x=>x.status==='Expired').length, active=m.filter(x=>x.status==='Active').length;
-    const rem=Math.max(0,12-issued);
+    const rem=Math.max(0,getKissQuota()-issued);
     aRows+=`<tr ${mi===kissCM?'style="background:rgba(200,16,46,.04)"':''}><td><strong ${mi===kissCM?'style="color:var(--red-light)"':''}>${fyLabel(mi)}</strong></td>
-      <td class="mono">${issued}</td><td class="mono">12</td>
+      <td class="mono">${issued}</td><td class="mono">${getKissQuota()}</td>
       <td class="mono" style="color:${rem>0?'var(--amber)':'var(--green)'}">${rem}</td>
       <td class="mono">${redeemed}</td><td class="mono">${expired}</td><td class="mono">${active}</td>
       <td>${issued>0?`<span class="pill ${redeemed/issued>=0.5?'pgr':'pa'}">${(redeemed/issued*100).toFixed(0)}%</span>`:'—'}</td></tr>`;
@@ -567,7 +569,7 @@ async function saveKissVoucher(){
   };
   // Check monthly quota
   const monthCount=(VD.kissVouchers||[]).filter(x=>x.fy_month==(iDate?fyIdx(iDate):fyIdxNow())&&(!eid||x.id!=eid)).length;
-  if(!eid && monthCount>=12){ if(!confirm('⚠ You have already issued 12 KissFM vouchers this month (full quota). Add anyway?')) return; }
+  if(!eid && monthCount>=getKissQuota()){ if(!confirm('⚠ You have already issued '+getKissQuota()+' KissFM vouchers this month (full quota). Add anyway?')) return; }
   showLoader(eid?'Updating...':'Saving...');
   try{
     if(eid) await DB.update('KISS_FM_VOUCHERS',eid,p); else await DB.add('KISS_FM_VOUCHERS',p);

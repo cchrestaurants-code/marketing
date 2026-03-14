@@ -611,11 +611,21 @@
 document.getElementById('sidebar').innerHTML = getSidebarHTML('functions');
 requireAuth();
 
-const VENUES = ['Amber Poolside','Cloud Cafe','Scarlet','The Loft'];
+// Load dropdowns from Settings (localStorage) — editable in Settings page
+function getDD(k,defs){try{const s=localStorage.getItem('cc_dd_'+k);return s?JSON.parse(s):defs;}catch(e){return defs;}}
+function getVenues()  { return getDD('func_venues',  ['Amber Poolside','Cloud Cafe','Scarlet','The Loft']); }
+function getSources() { return getDD('func_sources', ['Social Media','Website','Direct Walk-in','Recommendation','Wedding Show / Event','Email','Radio','Other']); }
+function getETypes()  { return getDD('func_event_types', ['Wedding','Birthday','High Tea','Proposal','Engagement','Corporate Event','Get Together','Party','Other']); }
+function getStatuses(){ return getDD('func_statuses', ['Pending','Details Shared','Confirmed','Cancelled','Postponed','Not Interested','Other']); }
+function getMenus()   { return getDD('func_menus',   ['Wedding Menu 1','Wedding Menu 2','Wedding Menu 3','High Tea','High Tea for 1','High Tea for 2','High Tea for 4','Finger Foods','Custom Menu']); }
+
+// Keep these as dynamic getters
+const VENUES    = ['Amber Poolside','Cloud Cafe','Scarlet','The Loft']; // used for cap lookup — keep static
 const VENUE_CAP = {'Amber Poolside':250,'Cloud Cafe':80,'Scarlet':180,'The Loft':70};
-const SOURCES = ['Social Media','Website','Direct Walk-in','Recommendation','Wedding Show / Event','Email','Radio','Other'];
-const ETYPES  = ['Wedding','Birthday','High Tea','Proposal','Engagement','Corporate Event','Get Together','Party','Other'];
-const STATUSES = ['Pending','Details Shared','Confirmed','Cancelled','Postponed','Not Interested','Other'];
+// Dynamic aliases used in charts/filters
+function ETYPES_LIST()   { return getETypes(); }
+function SOURCES_LIST()  { return getSources(); }
+function STATUSES_LIST() { return getStatuses(); }
 const STATUS_PILL = {
   'Pending':'pb', 'Details Shared':'bgo', 'Confirmed':'pgr',
   'Cancelled':'pr', 'Postponed':'pa', 'Not Interested':'pr', 'Other':'pb'
@@ -635,6 +645,49 @@ const CI = {};
 function kc(id){ if(CI[id]){CI[id].destroy();delete CI[id];} }
 
 // ── LOAD ─────────────────────────────────────────────
+// ── Populate all form dropdowns from Settings ──────
+function populateFormDropdowns() {
+  const venues   = getVenues();
+  const sources  = getSources();
+  const etypes   = getETypes();
+  const statuses = getStatuses();
+  const menus    = getMenus();
+
+  // All selects that need these options
+  const fill = (ids, opts) => ids.forEach(id => {
+    const el = document.getElementById(id); if(!el) return;
+    const cur = el.value;
+    el.innerHTML = opts.map(o=>`<option>${o}</option>`).join('');
+    if(opts.includes(cur)) el.value = cur;
+  });
+
+  fill(['i-venue','qa-venue'], venues);
+  fill(['i-source','qa-source'], sources);
+  fill(['i-event-type','qa-event-type'], etypes);
+  fill(['f-status','i-status','qa-status'], statuses);
+  fill(['i-menu'], menus);
+
+  // Filter dropdowns
+  const fStatus = document.getElementById('f-status');
+  if(fStatus){
+    const cur = fStatus.value;
+    fStatus.innerHTML = '<option value="">All Status</option>' + statuses.map(s=>`<option>${s}</option>`).join('');
+    if(statuses.includes(cur)) fStatus.value = cur;
+  }
+  const fType = document.getElementById('f-type');
+  if(fType){
+    const cur = fType.value;
+    fType.innerHTML = '<option value="">All Types</option>' + etypes.map(t=>`<option>${t}</option>`).join('');
+    if(etypes.includes(cur)) fType.value = cur;
+  }
+  const fVenue = document.getElementById('f-venue');
+  if(fVenue){
+    const cur = fVenue.value;
+    fVenue.innerHTML = '<option value="">All Venues</option>' + venues.map(v=>`<option>${v}</option>`).join('');
+    if(venues.includes(cur)) fVenue.value = cur;
+  }
+}
+
 async function load() {
   showLoader('Loading Functions & Events...');
   try {
@@ -643,6 +696,7 @@ async function load() {
     D.inquiries   = await fetchSheet('FuncInquiries');
     D.funcBudgets = await fetchSheet('FuncBudgets');
     renderSidebar(r.user, r.sidebarFields);
+    populateFormDropdowns();
     buildMonthTabs('inq-month-tabs', CM, i => { CM=i; buildMonthTabs('inq-month-tabs',CM,v=>{CM=v;renderInqMonthTabs();renderInquiries();}); renderInquiries(); });
     buildMonthTabs('bud-month-tabs', BM, i => { BM=i; buildMonthTabs('bud-month-tabs',BM,v=>{BM=v;renderBudget();}); renderBudget(); });
     buildMonthTabs('dd-tabs', DM, i => { DM=i; buildMonthTabs('dd-tabs',DM,v=>{DM=v;renderDeepDive();}); renderDeepDive(); });
