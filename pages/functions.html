@@ -8,6 +8,7 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script src="../js/app.js"></script>
 <script src="../js/sidebar.js"></script>
+<script src="../js/reports.js"></script>
 <style>
 /* ── Page-specific additions ─────────────────────── */
 .view-btn-row { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; align-items:center; }
@@ -82,6 +83,8 @@
     </div>
     <div class="tb-r">
       <span class="fy-chip">LKR · FY 2026–27</span>
+      <button class="btn btn-out btn-sm" onclick="dlFunctionsPDF()">📄 PDF</button>
+      <button class="btn btn-out btn-sm" onclick="dlFunctionsExcel()">📊 Excel</button>
       <button class="btn btn-out btn-sm" onclick="openImport()" title="Import from Excel">📥 Import</button>
       <button class="btn btn-out" onclick="openQuickAdd()" title="Fast capture while on a call">⚡ Quick Add</button>
       <button class="btn btn-gold" onclick="openFullModal()">+ Add Inquiry</button>
@@ -1345,6 +1348,31 @@ async function saveFuncBudget(){
     toast('Function budgets saved for '+fyLabel(BM)+'!');
   }catch(e){toast('Failed: '+e.message,'e');}
   hideLoader();
+}
+
+// ── FUNCTIONS DOWNLOADS ──────────────────────────
+function dlFunctionsPDF(){
+  const mon = CM;
+  const { html } = buildFunctionsReport(D.inquiries||[], mon, FY);
+  printReport(html, 'Functions Report — '+FY_MONTHS[mon]);
+}
+function dlFunctionsExcel(){
+  const mon = CM;
+  const inqs = (D.inquiries||[]).filter(x=>x.fy_month==mon);
+  const conf = inqs.filter(x=>x.status==='Confirmed');
+  const mLabel = FY_MONTHS[mon]+' '+(mon<9?FY+1:FY);
+  const headers = ['Inquiry Date','Guest Name','Phone','Email','Source','Event Type','Event Date','PAX','Venue','Menu Type','Food Revenue','Bev Revenue','Total Revenue','Status','Follow-up Date','Lost Reason','Remarks'];
+  const rows = inqs.map(x=>[fmtDate(x.inquiry_date)||'',x.guest_name||'',x.phone||'',x.email||'',x.source||'',x.event_type||'',fmtDate(x.event_date)||'',Number(x.pax||0),x.venue||'',x.menu_type||'',Number(x.food_revenue||0),Number(x.bev_revenue||0),Number(x.food_revenue||0)+Number(x.bev_revenue||0),x.status||'',fmtDate(x.followup_date)||'',x.lost_reason||'',x.remarks||'']);
+  const confRows = conf.map(x=>[fmtDate(x.event_date)||'',x.guest_name||'',x.event_type||'',x.venue||'',x.pax||0,Number(x.food_revenue||0),Number(x.bev_revenue||0),Number(x.food_revenue||0)+Number(x.bev_revenue||0)]);
+  const summary=[['Functions & Events Report — '+mLabel],['Generated',rDate()],[''],
+    ['Total Inquiries',inqs.length],['Confirmed',conf.length],['Conversion Rate',(inqs.length>0?(conf.length/inqs.length*100).toFixed(1):0)+'%'],
+    ['Total Revenue','LKR '+conf.reduce((a,x)=>a+Number(x.food_revenue||0)+Number(x.bev_revenue||0),0).toLocaleString()],[''],
+  ];
+  downloadExcel([
+    {name:'Summary', data:summary, colWidths:[22,16]},
+    {name:'All Inquiries', data:[headers,...rows], colWidths:[13,18,14,20,16,14,13,6,14,14,14,14,14,14,13,16,20]},
+    {name:'Confirmed Events', data:[['Event Date','Guest','Type','Venue','PAX','Food Revenue','Bev Revenue','Total Revenue'],...confRows], colWidths:[13,18,14,14,6,14,14,14]},
+  ], 'functions_'+mLabel.replace(/ /g,'_')+'.xlsx');
 }
 
 load();

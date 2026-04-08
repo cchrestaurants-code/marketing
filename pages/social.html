@@ -1,213 +1,259 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Social Media — CC Marketing Hub</title>
 <link rel="stylesheet" href="../css/main.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="../js/app.js"></script>
-<script src="../js/sidebar.js"></script>
+<script src="../js/config.js"></script>
 </head>
 <body>
-<div id="loader"><div class="spin"></div><div id="loader-msg">Loading...</div></div>
-<aside class="sidebar" id="sidebar"></aside>
+<div id="loader"><div class="loader-spinner"></div><div id="loader-msg">Loading...</div></div>
+
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo"><div class="sb-icon">🏨</div><div><div class="sb-hotel">Colombo Court<br>Hotel & Spa</div></div></div>
+    <div class="sb-fy">FY Apr 2026 – Mar 2027</div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-section">Overview</div>
+    <a class="sb-item" href="dashboard.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>Dashboard</a>
+    <div class="sb-section">Budget</div>
+    <a class="sb-item" href="budget.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Budget Tracker</a>
+    <a class="sb-item active" href="social.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M22 2L11 13"/><path d="M22 2L15 22l-4-9-9-4 20-7z"/></svg>Social Media</a>
+    <a class="sb-item" href="influencers.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>Influencers</a>
+    <a class="sb-item" href="suppliers.html"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 3h0a4 4 0 0 1 4 4H4a4 4 0 0 1 4-4h0"/></svg>Suppliers & Print</a>
+    <div class="sb-section">Config</div>
+    <a class="sb-item" href="settings.html" id="sb-settings-link"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 19.07a10 10 0 0 1 0-14.14"/></svg>Settings</a>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-user"><div class="sb-username" id="sb-uname">—</div><div class="sb-role" id="sb-role">—</div></div>
+    <button class="btn-logout" onclick="logout()">Sign out</button>
+  </div>
+</aside>
 
 <main class="main">
   <header class="topbar">
-    <div><div class="tb-title">Social Media</div><div class="tb-sub">Campaign tracking, spend, page growth & performance metrics</div></div>
-    <div class="tb-r">
+    <div>
+      <div class="tb-title">Social Media</div>
+      <div class="tb-sub">Campaign tracking, ad spend, page growth & performance</div>
+    </div>
+    <div class="tb-right">
       <span class="fy-chip">LKR · FY 2026–27</span>
-      <button class="btn btn-out" onclick="openM('m-metrics')">+ Page Metrics</button>
-      <button class="btn btn-gold" onclick="openCampModal()">+ Add Campaign</button>
+      <button class="btn btn-gold" onclick="openModal('m-social')">+ Add Social Entry</button>
     </div>
   </header>
+
   <div class="content">
     <div class="m-tabs" id="s-tabs"></div>
-    <div class="sec"><div class="sec-t" id="s-lbl">—</div></div>
+    <div class="sec-head">
+      <div class="sec-title" id="s-lbl">April 2026</div>
+    </div>
 
-    <div class="kpi-row k4" id="s-kpis"></div>
-    <div class="sec"><div class="sec-t">Page Growth & Audience</div></div>
-    <div class="kpi-row k4" id="g-kpis"></div>
+    <!-- KPIs -->
+    <div class="kpi-grid kpi-4" id="s-kpis"></div>
 
-    <div class="ch-row ch-2">
-      <div class="ch-card">
-        <div class="ch-title">Spend by Type</div>
-        <div class="ch-sub">Campaign vs Boosting vs Content etc.</div>
+    <!-- Page growth KPIs -->
+    <div class="sec-head"><div class="sec-title">Page Growth & Audience</div></div>
+    <div class="kpi-grid kpi-4" id="growth-kpis"></div>
+
+    <!-- Charts -->
+    <div class="chart-row cr-2e">
+      <div class="chart-card">
+        <div class="chart-head">Spend by Type</div>
+        <div class="chart-sub">Campaign vs Boosting vs Content breakdown</div>
         <canvas id="ch-type"></canvas>
       </div>
-      <div class="ch-card">
-        <div class="ch-title">Spend by Platform</div>
-        <div class="ch-sub">Distribution across platforms this month</div>
+      <div class="chart-card">
+        <div class="chart-head">Spend by Platform</div>
+        <div class="chart-sub">Spend distribution across platforms</div>
         <canvas id="ch-plat"></canvas>
       </div>
     </div>
-    <div class="ch-row" style="grid-template-columns:1fr">
-      <div class="ch-card">
-        <div class="ch-title">Monthly Social Spend Trend — FY 2026–27</div>
-        <div class="ch-sub">Total social spend across all 12 months</div>
+    <div class="chart-row" style="grid-template-columns:1fr">
+      <div class="chart-card">
+        <div class="chart-head">Monthly Social Spend Trend</div>
+        <div class="chart-sub">Total social spend across the financial year</div>
         <canvas id="ch-trend"></canvas>
       </div>
     </div>
 
     <!-- Campaign table -->
-    <div class="tc">
-      <div class="tc-head"><div class="tc-title">Campaign & Ad Entries — <span id="c-lbl"></span></div></div>
-      <div class="overflow-x">
+    <div class="t-card">
+      <div class="t-head">
+        <div class="t-title">Campaign & Spend Entries — <span id="entries-lbl"></span></div>
+      </div>
+      <div style="overflow-x:auto">
         <table>
           <thead><tr>
-            <th>Date</th><th>Platform</th><th>Type</th><th>Campaign Name</th><th>Objective</th>
-            <th>Spend (LKR)</th><th>Impressions</th><th>Reach</th><th>Engagements</th>
-            <th>Leads</th><th>Revenue (LKR)</th><th>New Followers</th><th>Page Likes</th><th>CTR %</th>
+            <th>Date</th><th>Platform</th><th>Type</th><th>Campaign / Post</th>
+            <th>Objective</th><th>Spend (LKR)</th><th>Impressions</th>
+            <th>Reach</th><th>Engagements</th><th>Leads</th>
+            <th>Revenue (LKR)</th><th>New Followers</th><th>New Page Likes</th>
             <th>Actions</th>
           </tr></thead>
-          <tbody id="c-tbl"></tbody>
+          <tbody id="soc-rows"></tbody>
         </table>
       </div>
     </div>
 
     <!-- Monthly page metrics -->
-    <div class="tc">
-      <div class="tc-head">
-        <div class="tc-title">Monthly Page Metrics</div>
-        <button class="btn btn-out btn-sm" onclick="openM('m-metrics')">+ Add</button>
+    <div class="t-card">
+      <div class="t-head">
+        <div class="t-title">Monthly Page Metrics Summary</div>
+        <button class="btn btn-outline btn-sm" onclick="openModal('m-metrics')">+ Add Monthly Metrics</button>
       </div>
       <table>
         <thead><tr><th>Month</th><th>Platform</th><th>Followers Start</th><th>Followers End</th><th>Net Growth</th><th>Page Likes</th><th>Avg Engagement Rate</th><th>Actions</th></tr></thead>
-        <tbody id="pm-tbl"></tbody>
+        <tbody id="metrics-rows"></tbody>
       </table>
     </div>
   </div>
 </main>
 
-<!-- CAMPAIGN MODAL -->
-<div class="overlay" id="m-camp">
-  <div class="modal wide">
-    <div class="modal-hd"><div class="modal-t" id="camp-t">Add Campaign Entry</div><button class="modal-x" onclick="closeM('m-camp')">×</button></div>
+<!-- SOCIAL SPEND MODAL -->
+<div class="overlay" id="m-social">
+  <div class="modal" style="width:600px">
+    <div class="modal-hd"><div class="modal-title" id="soc-modal-title">Add Social Media Entry</div><button class="modal-x" onclick="closeModal('m-social')">×</button></div>
     <div class="modal-bd">
       <div class="fg">
-        <div class="fr"><label>Date</label><input type="date" id="c-date"></div>
+        <div class="fr"><label>Date</label><input type="date" id="so-date"></div>
         <div class="fr"><label>Platform</label>
-          <select id="c-plat"><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>LinkedIn</option><option>YouTube</option><option>Twitter/X</option><option>Google Ads</option></select>
+          <select id="so-plat"><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>LinkedIn</option><option>YouTube</option><option>Twitter/X</option><option>Google</option></select>
         </div>
       </div>
       <div class="fg">
         <div class="fr"><label>Type</label>
-          <select id="c-type"><option>Campaign</option><option>Boosting</option><option>Content Creation</option><option>Page Likes Campaign</option><option>Follower Growth</option><option>Lead Generation</option><option>Other</option></select>
+          <select id="so-type"><option>Campaign</option><option>Boosting</option><option>Content Creation</option><option>Page Likes Campaign</option><option>Follower Growth</option><option>Lead Generation</option><option>Other</option></select>
         </div>
         <div class="fr"><label>Objective</label>
-          <select id="c-obj"><option>Awareness</option><option>Engagement</option><option>Reach</option><option>Conversions</option><option>Traffic</option><option>Lead Generation</option><option>Page Likes</option><option>Follower Growth</option></select>
+          <select id="so-obj"><option>Awareness</option><option>Engagement</option><option>Reach</option><option>Conversions</option><option>Traffic</option><option>Lead Generation</option><option>Page Likes</option><option>Follower Growth</option></select>
         </div>
       </div>
-      <div class="fr"><label>Campaign / Post Name</label><input type="text" id="c-name" placeholder="e.g. Ramadan Offer, Valentine Staycation, Spa Launch..."></div>
+      <div class="fr"><label>Campaign / Post Name</label><input type="text" id="so-name" placeholder="e.g. Ramadan Offer, Valentine's Staycation, Spa Launch"></div>
       <div class="fg3">
-        <div class="fr"><label>Spend (LKR)</label><input type="number" id="c-amt" placeholder="0.00"></div>
-        <div class="fr"><label>Impressions</label><input type="number" id="c-imp" placeholder="0"></div>
-        <div class="fr"><label>Reach</label><input type="number" id="c-reach" placeholder="0"></div>
+        <div class="fr"><label>Spend (LKR)</label><input type="number" id="so-amt" placeholder="0.00"></div>
+        <div class="fr"><label>Impressions</label><input type="number" id="so-imp" placeholder="0"></div>
+        <div class="fr"><label>Reach</label><input type="number" id="so-reach" placeholder="0"></div>
       </div>
       <div class="fg3">
-        <div class="fr"><label>Engagements</label><input type="number" id="c-eng" placeholder="0"></div>
-        <div class="fr"><label>Leads Generated</label><input type="number" id="c-leads" placeholder="0"></div>
-        <div class="fr"><label>Revenue Attributed (LKR)</label><input type="number" id="c-rev" placeholder="0.00"></div>
+        <div class="fr"><label>Engagements</label><input type="number" id="so-eng" placeholder="0"></div>
+        <div class="fr"><label>Leads Generated</label><input type="number" id="so-leads" placeholder="0"></div>
+        <div class="fr"><label>Revenue (LKR)</label><input type="number" id="so-rev" placeholder="0.00"></div>
       </div>
       <div class="fg3">
-        <div class="fr"><label>New Followers</label><input type="number" id="c-fol" placeholder="0"></div>
-        <div class="fr"><label>New Page Likes</label><input type="number" id="c-likes" placeholder="0"></div>
-        <div class="fr"><label>CTR (%)</label><input type="number" id="c-ctr" placeholder="0.00" step="0.01"></div>
+        <div class="fr"><label>New Followers</label><input type="number" id="so-fol" placeholder="0"></div>
+        <div class="fr"><label>New Page Likes</label><input type="number" id="so-likes" placeholder="0"></div>
+        <div class="fr"><label>CTR (%)</label><input type="number" id="so-ctr" placeholder="0.00" step="0.01"></div>
       </div>
-      <div class="fr"><label>Notes</label><textarea id="c-notes" placeholder="Creative details, audience targeting, campaign notes..."></textarea></div>
-      <input type="hidden" id="c-id">
+      <div class="fr"><label>Notes</label><textarea id="so-notes" placeholder="Creative details, audience targeting, ad set info..."></textarea></div>
+      <input type="hidden" id="so-edit-id">
     </div>
-    <div class="modal-ft"><button class="btn btn-out" onclick="closeM('m-camp')">Cancel</button><button class="btn btn-gold" onclick="saveCamp()" id="c-save">Save</button></div>
+    <div class="modal-ft"><button class="btn btn-outline" onclick="closeModal('m-social')">Cancel</button><button class="btn btn-gold" onclick="saveSocial()" id="save-soc-btn">Save</button></div>
   </div>
 </div>
 
-<!-- PAGE METRICS MODAL -->
+<!-- MONTHLY METRICS MODAL -->
 <div class="overlay" id="m-metrics">
   <div class="modal">
-    <div class="modal-hd"><div class="modal-t" id="pm-t">Add Monthly Page Metrics</div><button class="modal-x" onclick="closeM('m-metrics')">×</button></div>
+    <div class="modal-hd"><div class="modal-title" id="met-modal-title">Add Monthly Page Metrics</div><button class="modal-x" onclick="closeModal('m-metrics')">×</button></div>
     <div class="modal-bd">
       <div class="fg">
-        <div class="fr"><label>Month</label><select id="pm-mo"></select></div>
-        <div class="fr"><label>Platform</label><select id="pm-plat"><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>LinkedIn</option><option>YouTube</option></select></div>
+        <div class="fr"><label>FY Month</label><select id="met-mo"></select></div>
+        <div class="fr"><label>Platform</label>
+          <select id="met-plat"><option>Instagram</option><option>Facebook</option><option>TikTok</option><option>LinkedIn</option><option>YouTube</option></select>
+        </div>
       </div>
       <div class="fg">
-        <div class="fr"><label>Followers (Start of Month)</label><input type="number" id="pm-fs" placeholder="0"></div>
-        <div class="fr"><label>Followers (End of Month)</label><input type="number" id="pm-fe" placeholder="0"></div>
+        <div class="fr"><label>Followers (Start of Month)</label><input type="number" id="met-fol-s" placeholder="0"></div>
+        <div class="fr"><label>Followers (End of Month)</label><input type="number" id="met-fol-e" placeholder="0"></div>
       </div>
       <div class="fg">
-        <div class="fr"><label>Total Page Likes</label><input type="number" id="pm-pl" placeholder="0"></div>
-        <div class="fr"><label>Avg Engagement Rate (%)</label><input type="number" id="pm-er" placeholder="0.00" step="0.01"></div>
+        <div class="fr"><label>Total Page Likes</label><input type="number" id="met-pl" placeholder="0"></div>
+        <div class="fr"><label>Avg Engagement Rate (%)</label><input type="number" id="met-er" placeholder="0.00" step="0.01"></div>
       </div>
-      <div class="fr"><label>Notes</label><textarea id="pm-notes"></textarea></div>
-      <input type="hidden" id="pm-id">
+      <div class="fr"><label>Notes</label><textarea id="met-notes"></textarea></div>
+      <input type="hidden" id="met-edit-id">
     </div>
-    <div class="modal-ft"><button class="btn btn-out" onclick="closeM('m-metrics')">Cancel</button><button class="btn btn-gold" onclick="saveMetrics()" id="pm-save">Save Metrics</button></div>
+    <div class="modal-ft"><button class="btn btn-outline" onclick="closeModal('m-metrics')">Cancel</button><button class="btn btn-gold" onclick="saveMetrics()" id="save-met-btn">Save Metrics</button></div>
   </div>
 </div>
 
 <script>
-document.getElementById('sidebar').innerHTML = getSidebarHTML('social');
-requireAuth();
-let D={}, cm=fyIdxNow();
+const FY=2026;
+const user=requireAuth();
+if(user){document.getElementById('sb-uname').textContent=user.username;document.getElementById('sb-role').textContent=user.role;}
+if(!isAdmin())document.getElementById('sb-settings-link').style.display='none';
+
+let socials=[],pageMetrics=[],curMonth=fyIdxNow();
 const CI={};
 function kc(id){if(CI[id]){CI[id].destroy();delete CI[id];}}
 
-async function load(){
-  showLoader('Loading Social Media...');
-  try{const r=await DB.getAll();D=r;renderSidebar(r.user,r.sidebarFields);renderTabs();render();}
-  catch(e){toast('Load failed: '+e.message,'e');}
+async function loadAll(){
+  showLoader('Loading social media...');
+  try{
+    [socials,pageMetrics]=await Promise.all([DB.getSocials(FY),SB.get('page_metrics','?fy=eq.'+FY+'&order=fy_month.asc')]);
+    renderTabs();render();
+  }catch(e){toast('Load failed: '+e.message,'error');}
   hideLoader();
 }
 
 function renderTabs(){
   document.getElementById('s-tabs').innerHTML=FY_MONTHS.map((m,i)=>{
-    const hd=(D.socialSpends||[]).filter(s=>s.fy_month==i).length>0;
-    return`<div class="m-tab ${i===cm?'active':''} ${hd&&i!==cm?'hd':''}" onclick="setCM(${i})">${FY_SHORT[i]}</div>`;
+    const hd=socials.filter(s=>s.fy_month===i).length>0;
+    return`<div class="m-tab ${i===curMonth?'active':''} ${hd&&i!==curMonth?'has-d':''}" onclick="setCM(${i})">${FY_SHORT[i]}</div>`;
   }).join('');
 }
-function setCM(i){cm=i;renderTabs();render();}
+function setCM(i){curMonth=i;renderTabs();render();}
 
 function render(){
-  const lbl=fyLabel(cm);
+  const m=curMonth, lbl=fyMonthLabel(m,FY);
   document.getElementById('s-lbl').textContent=lbl;
-  document.getElementById('c-lbl').textContent=lbl;
+  document.getElementById('entries-lbl').textContent=lbl;
 
-  const ents=(D.socialSpends||[]).filter(s=>s.fy_month==cm);
+  const ents=socials.filter(s=>s.fy_month===m);
   const tot=ents.reduce((a,s)=>a+Number(s.amount||0),0);
-  const ytd=(D.socialSpends||[]).reduce((a,s)=>a+Number(s.amount||0),0);
+  const camps=ents.filter(s=>s.type==='Campaign').reduce((a,s)=>a+Number(s.amount||0),0);
+  const boosts=ents.filter(s=>s.type==='Boosting').reduce((a,s)=>a+Number(s.amount||0),0);
+  const ytd=socials.reduce((a,s)=>a+Number(s.amount||0),0);
 
   document.getElementById('s-kpis').innerHTML=`
-    <div class="kpi k-g"><div class="kpi-lbl">${FY_MONTHS[cm]} Spend</div><div class="kpi-val">${fmt(tot)}</div><div class="kpi-sub">${ents.length} entries</div></div>
-    <div class="kpi k-b"><div class="kpi-lbl">Campaigns</div><div class="kpi-val">${fmt(ents.filter(e=>e.type==='Campaign').reduce((a,s)=>a+Number(s.amount||0),0))}</div></div>
-    <div class="kpi k-a"><div class="kpi-lbl">Boosting</div><div class="kpi-val">${fmt(ents.filter(e=>e.type==='Boosting').reduce((a,s)=>a+Number(s.amount||0),0))}</div></div>
-    <div class="kpi k-gr"><div class="kpi-lbl">YTD Social Spend</div><div class="kpi-val">${fmt(ytd)}</div></div>`;
+    <div class="kpi-card kpi-gold"><div class="kpi-label">${FY_MONTHS[m]} Spend</div><div class="kpi-val">${fmt(tot)}</div><div class="kpi-sub">${ents.length} entries</div></div>
+    <div class="kpi-card kpi-blue"><div class="kpi-label">Campaigns</div><div class="kpi-val">${fmt(camps)}</div></div>
+    <div class="kpi-card kpi-amber"><div class="kpi-label">Boosting</div><div class="kpi-val">${fmt(boosts)}</div></div>
+    <div class="kpi-card kpi-green"><div class="kpi-label">YTD Social Spend</div><div class="kpi-val">${fmt(ytd)}</div></div>`;
 
   const totImp=ents.reduce((a,s)=>a+Number(s.impressions||0),0);
   const totLeads=ents.reduce((a,s)=>a+Number(s.leads||0),0);
   const totRev=ents.reduce((a,s)=>a+Number(s.revenue||0),0);
   const totFol=ents.reduce((a,s)=>a+Number(s.new_followers||0),0);
-  document.getElementById('g-kpis').innerHTML=`
-    <div class="kpi k-b"><div class="kpi-lbl">Total Impressions</div><div class="kpi-val">${totImp.toLocaleString()}</div><div class="kpi-sub">this month</div></div>
-    <div class="kpi k-gr"><div class="kpi-lbl">Leads Generated</div><div class="kpi-val">${totLeads.toLocaleString()}</div></div>
-    <div class="kpi k-g"><div class="kpi-lbl">Revenue Attributed</div><div class="kpi-val">${fmt(totRev)}</div></div>
-    <div class="kpi k-a"><div class="kpi-lbl">New Followers</div><div class="kpi-val">${totFol.toLocaleString()}</div><div class="kpi-sub">this month</div></div>`;
+  document.getElementById('growth-kpis').innerHTML=`
+    <div class="kpi-card kpi-blue"><div class="kpi-label">Total Impressions</div><div class="kpi-val">${totImp.toLocaleString()}</div><div class="kpi-sub">this month</div></div>
+    <div class="kpi-card kpi-green"><div class="kpi-label">Leads Generated</div><div class="kpi-val">${totLeads.toLocaleString()}</div></div>
+    <div class="kpi-card kpi-gold"><div class="kpi-label">Revenue Attributed</div><div class="kpi-val">${fmt(totRev)}</div></div>
+    <div class="kpi-card kpi-amber"><div class="kpi-label">New Followers</div><div class="kpi-val">${totFol.toLocaleString()}</div><div class="kpi-sub">this month</div></div>`;
 
-  const PAL=['#b8956a','#4db87a','#e05555','#d48040','#5a90d8','#9b7ac8','#4db8a0'];
+  // Charts
   kc('ch-type');kc('ch-plat');kc('ch-trend');
+  const PAL=['#b8956a','#4caf7d','#e05c5c','#d4843a','#5b8fd4','#9b7ac8','#4caf9b'];
   const byType={},byPlat={};
   ents.forEach(s=>{byType[s.type]=(byType[s.type]||0)+Number(s.amount||0);byPlat[s.platform]=(byPlat[s.platform]||0)+Number(s.amount||0);});
-  CI['ch-type']=new Chart(document.getElementById('ch-type'),{type:'doughnut',data:{labels:Object.keys(byType).length?Object.keys(byType):['No data'],datasets:[{data:Object.keys(byType).length?Object.values(byType):[1],backgroundColor:Object.keys(byType).length?PAL:['rgba(255,255,255,0.05)'],borderWidth:2,borderColor:'#181826'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{font:{size:10,family:'Poppins'},color:'#9a9590',boxWidth:10}}}}});
-  CI['ch-plat']=new Chart(document.getElementById('ch-plat'),{type:'bar',data:{labels:Object.keys(byPlat).length?Object.keys(byPlat):['No data'],datasets:[{label:'Spend',data:Object.values(byPlat).length?Object.values(byPlat):[0],backgroundColor:'rgba(184,149,106,0.48)',borderColor:'#b8956a',borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'LKR '+fmtK(v),color:'#9a9590',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},x:{ticks:{color:'#9a9590',font:{size:10}},grid:{display:false}}}}});
-  CI['ch-trend']=new Chart(document.getElementById('ch-trend'),{type:'line',data:{labels:FY_SHORT,datasets:[{label:'Social Spend',data:FY_MONTHS.map((_,i)=>(D.socialSpends||[]).filter(s=>s.fy_month==i).reduce((a,s)=>a+Number(s.amount||0),0)),borderColor:'#b8956a',backgroundColor:'rgba(184,149,106,0.07)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#b8956a',fill:true,tension:.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'LKR '+fmtK(v),color:'#9a9590',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},x:{ticks:{color:'#9a9590',font:{size:10}},grid:{display:false}}}}});
 
-  let cRows='';
+  CI['ch-type']=new Chart(document.getElementById('ch-type'),{type:'doughnut',data:{labels:Object.keys(byType).length?Object.keys(byType):['No data'],datasets:[{data:Object.keys(byType).length?Object.values(byType):[1],backgroundColor:Object.keys(byType).length?PAL:['rgba(255,255,255,0.06)'],borderWidth:2,borderColor:'#16161f'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{position:'bottom',labels:{font:{size:10,family:'Poppins'},color:'#7a7570',boxWidth:10}}}}});
+  CI['ch-plat']=new Chart(document.getElementById('ch-plat'),{type:'bar',data:{labels:Object.keys(byPlat).length?Object.keys(byPlat):['No data'],datasets:[{label:'Spend',data:Object.keys(byPlat).length?Object.values(byPlat):[0],backgroundColor:'rgba(184,149,106,0.5)',borderColor:'#b8956a',borderWidth:1.5,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'LKR '+fmtK(v),color:'#7a7570',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},x:{ticks:{color:'#7a7570',font:{size:10}},grid:{display:false}}}}});
+  const trendData=FY_MONTHS.map((_,i)=>socials.filter(s=>s.fy_month===i).reduce((a,s)=>a+Number(s.amount||0),0));
+  CI['ch-trend']=new Chart(document.getElementById('ch-trend'),{type:'line',data:{labels:FY_SHORT,datasets:[{label:'Social Spend',data:trendData,borderColor:'#b8956a',backgroundColor:'rgba(184,149,106,0.08)',borderWidth:2,pointRadius:4,pointBackgroundColor:'#b8956a',fill:true,tension:0.3}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>'LKR '+fmtK(v),color:'#7a7570',font:{size:10}},grid:{color:'rgba(255,255,255,0.04)'}},x:{ticks:{color:'#7a7570',font:{size:10}},grid:{display:false}}}}});
+
+  // Campaign rows
+  let rows='';
   ents.forEach(s=>{
-    cRows+=`<tr>
+    rows+=`<tr>
       <td>${s.date||'—'}</td>
-      <td><span class="pill pg">${s.platform||'—'}</span></td>
-      <td><span class="pill ${s.type==='Campaign'?'pgr':s.type==='Boosting'?'pa':'pb'}">${s.type||'—'}</span></td>
+      <td><span class="pill p-gold">${s.platform}</span></td>
+      <td><span class="pill ${s.type==='Campaign'?'p-green':s.type==='Boosting'?'p-amber':'p-blue'}">${s.type}</span></td>
       <td style="max-width:160px;font-weight:500">${s.name||'—'}</td>
-      <td style="font-size:11px;color:var(--text-2)">${s.objective||'—'}</td>
+      <td style="font-size:11px;color:var(--text-muted)">${s.objective||'—'}</td>
       <td class="mono" style="font-weight:600">${fmt(s.amount)}</td>
       <td class="mono">${s.impressions?Number(s.impressions).toLocaleString():'—'}</td>
       <td class="mono">${s.reach?Number(s.reach).toLocaleString():'—'}</td>
@@ -216,125 +262,136 @@ function render(){
       <td class="mono">${s.revenue?fmt(s.revenue):'—'}</td>
       <td class="mono">${s.new_followers||'—'}</td>
       <td class="mono">${s.new_page_likes||'—'}</td>
-      <td class="mono">${s.ctr?s.ctr+'%':'—'}</td>
-      <td><div style="display:flex;gap:4px"><button class="btn btn-edit btn-sm" onclick="editCamp('${s.id}')">Edit</button><button class="btn btn-ghost btn-sm" onclick="delCamp('${s.id}')">✕</button></div></td>
+      <td><div style="display:flex;gap:4px">
+        <button class="btn btn-edit btn-sm" onclick="editSoc('${s.id}')">Edit</button>
+        <button class="btn btn-ghost btn-sm" onclick="delSoc('${s.id}')">✕</button>
+      </div></td>
     </tr>`;
   });
-  document.getElementById('c-tbl').innerHTML=cRows||`<tr><td colspan="15"><div class="empty"><div class="ei">◎</div>No entries for ${lbl}. Click "+ Add Campaign" above.</div></td></tr>`;
+  document.getElementById('soc-rows').innerHTML=rows||`<tr><td colspan="14"><div class="empty"><div class="ei">◎</div>No entries for ${lbl}.</div></td></tr>`;
 
-  let pmRows='';
-  (D.pageMetrics||[]).forEach(pm=>{
-    const g=Number(pm.followers_end||0)-Number(pm.followers_start||0);
-    pmRows+=`<tr><td>${fyLabel(pm.fy_month)}</td><td><span class="pill pg">${pm.platform||'—'}</span></td><td class="mono">${Number(pm.followers_start||0).toLocaleString()}</td><td class="mono">${Number(pm.followers_end||0).toLocaleString()}</td><td class="mono" style="color:${g>=0?'var(--green)':'var(--red)'};font-weight:600">${g>=0?'+':''}${g.toLocaleString()}</td><td class="mono">${Number(pm.page_likes||0).toLocaleString()}</td><td class="mono">${pm.engagement_rate||'—'}%</td><td><div style="display:flex;gap:4px"><button class="btn btn-edit btn-sm" onclick="editMetric('${pm.id}')">Edit</button><button class="btn btn-ghost btn-sm" onclick="delMetric('${pm.id}')">✕</button></div></td></tr>`;
+  // Metrics rows
+  let mrows='';
+  pageMetrics.forEach(pm=>{
+    const growth=Number(pm.followers_end||0)-Number(pm.followers_start||0);
+    mrows+=`<tr>
+      <td>${fyMonthLabel(pm.fy_month,FY)}</td>
+      <td><span class="pill p-gold">${pm.platform}</span></td>
+      <td class="mono">${Number(pm.followers_start||0).toLocaleString()}</td>
+      <td class="mono">${Number(pm.followers_end||0).toLocaleString()}</td>
+      <td class="mono" style="color:${growth>=0?'var(--green)':'var(--red)'};font-weight:600">+${growth.toLocaleString()}</td>
+      <td class="mono">${Number(pm.page_likes||0).toLocaleString()}</td>
+      <td class="mono">${pm.engagement_rate||'—'}%</td>
+      <td><div style="display:flex;gap:4px">
+        <button class="btn btn-edit btn-sm" onclick="editMetric('${pm.id}')">Edit</button>
+        <button class="btn btn-ghost btn-sm" onclick="delMetric('${pm.id}')">✕</button>
+      </div></td>
+    </tr>`;
   });
-  document.getElementById('pm-tbl').innerHTML=pmRows||`<tr><td colspan="8"><div class="empty"><div class="ei">📊</div>No page metrics recorded yet.</div></td></tr>`;
+  document.getElementById('metrics-rows').innerHTML=mrows||`<tr><td colspan="8"><div class="empty"><div class="ei">📊</div>No page metrics recorded yet.</div></td></tr>`;
 }
 
-function openCampModal(){
-  document.getElementById('camp-t').textContent='Add Campaign Entry';
-  document.getElementById('c-save').textContent='Save';
-  document.getElementById('c-id').value='';
-  document.getElementById('c-date').value=new Date().toISOString().split('T')[0];
-  ['c-amt','c-imp','c-reach','c-eng','c-leads','c-rev','c-fol','c-likes','c-ctr'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('c-name').value='';document.getElementById('c-notes').value='';
-  openM('m-camp');
+function openModal(id){
+  document.getElementById(id).classList.add('open');
+  if(id==='m-social'){
+    document.getElementById('soc-modal-title').textContent='Add Social Media Entry';
+    document.getElementById('save-soc-btn').textContent='Save';
+    document.getElementById('so-edit-id').value='';
+    document.getElementById('so-date').value=new Date().toISOString().split('T')[0];
+    ['so-amt','so-imp','so-reach','so-eng','so-leads','so-rev','so-fol','so-likes','so-ctr'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('so-name').value='';document.getElementById('so-notes').value='';
+  }
+  if(id==='m-metrics'){
+    document.getElementById('met-modal-title').textContent='Add Monthly Page Metrics';
+    document.getElementById('save-met-btn').textContent='Save Metrics';
+    document.getElementById('met-edit-id').value='';
+    document.getElementById('met-mo').innerHTML=FY_MONTHS.map((m,i)=>`<option value="${i}" ${i===curMonth?'selected':''}>${fyMonthLabel(i,FY)}</option>`).join('');
+    ['met-fol-s','met-fol-e','met-pl','met-er'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('met-notes').value='';
+  }
 }
-function editCamp(id){
-  const s=(D.socialSpends||[]).find(x=>x.id==id);if(!s)return;
-  document.getElementById('camp-t').textContent='Edit Campaign Entry';
-  document.getElementById('c-save').textContent='Update';
-  document.getElementById('c-id').value=id;
-  document.getElementById('c-date').value=s.date||'';
-  document.getElementById('c-plat').value=s.platform||'Instagram';
-  document.getElementById('c-type').value=s.type||'Campaign';
-  document.getElementById('c-obj').value=s.objective||'Awareness';
-  document.getElementById('c-name').value=s.name||'';
-  document.getElementById('c-amt').value=s.amount||'';
-  document.getElementById('c-imp').value=s.impressions||'';
-  document.getElementById('c-reach').value=s.reach||'';
-  document.getElementById('c-eng').value=s.engagements||'';
-  document.getElementById('c-leads').value=s.leads||'';
-  document.getElementById('c-rev').value=s.revenue||'';
-  document.getElementById('c-fol').value=s.new_followers||'';
-  document.getElementById('c-likes').value=s.new_page_likes||'';
-  document.getElementById('c-ctr').value=s.ctr||'';
-  document.getElementById('c-notes').value=s.notes||'';
-  openM('m-camp');
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+
+function socPayload(){
+  const date=document.getElementById('so-date').value;
+  return{date,fy_month:date?fyIdx(date):curMonth,fy:FY,platform:document.getElementById('so-plat').value,type:document.getElementById('so-type').value,objective:document.getElementById('so-obj').value,name:document.getElementById('so-name').value,amount:parseFloat(document.getElementById('so-amt').value)||0,impressions:parseInt(document.getElementById('so-imp').value)||0,reach:parseInt(document.getElementById('so-reach').value)||0,engagements:parseInt(document.getElementById('so-eng').value)||0,leads:parseInt(document.getElementById('so-leads').value)||0,revenue:parseFloat(document.getElementById('so-rev').value)||0,new_followers:parseInt(document.getElementById('so-fol').value)||0,new_page_likes:parseInt(document.getElementById('so-likes').value)||0,ctr:parseFloat(document.getElementById('so-ctr').value)||0,notes:document.getElementById('so-notes').value};
 }
-async function saveCamp(){
-  const eid=document.getElementById('c-id').value;
-  const date=document.getElementById('c-date').value;
-  const name=document.getElementById('c-name').value.trim();
-  const amt=parseFloat(document.getElementById('c-amt').value);
-  if(!name||!amt){toast('Campaign Name and Spend are required.','e');return;}
-  const p={fy:FY,fy_month:date?fyIdx(date):cm,date,platform:document.getElementById('c-plat').value,type:document.getElementById('c-type').value,objective:document.getElementById('c-obj').value,name,amount:amt,impressions:parseInt(document.getElementById('c-imp').value)||0,reach:parseInt(document.getElementById('c-reach').value)||0,engagements:parseInt(document.getElementById('c-eng').value)||0,leads:parseInt(document.getElementById('c-leads').value)||0,revenue:parseFloat(document.getElementById('c-rev').value)||0,new_followers:parseInt(document.getElementById('c-fol').value)||0,new_page_likes:parseInt(document.getElementById('c-likes').value)||0,ctr:parseFloat(document.getElementById('c-ctr').value)||0,notes:document.getElementById('c-notes').value};
-  showLoader(eid?'Updating...':'Saving...');
+async function saveSocial(){
+  const editId=document.getElementById('so-edit-id').value;
+  const p=socPayload();
+  if(!p.name||!p.amount){toast('Fill Campaign Name and Amount.','error');return;}
+  showLoader(editId?'Updating...':'Saving...');
   try{
-    if(eid)await DB.update('SOCIAL_SPENDS',eid,p);else await DB.add('SOCIAL_SPENDS',p);
-    const r=await DB.getAll();D=r;closeM('m-camp');renderTabs();render();toast(eid?'Updated!':'Saved!');
-  }catch(e){toast('Failed: '+e.message,'e');}
+    if(editId)await DB.updateSocial(editId,p);else await DB.addSocial(p);
+    socials=await DB.getSocials(FY);closeModal('m-social');renderTabs();render();toast(editId?'Updated!':'Saved!');
+  }catch(e){toast('Failed: '+e.message,'error');}
   hideLoader();
 }
-async function delCamp(id){
+function editSoc(id){
+  const s=socials.find(x=>x.id===id);if(!s)return;
+  openModal('m-social');
+  document.getElementById('soc-modal-title').textContent='Edit Social Entry';
+  document.getElementById('save-soc-btn').textContent='Update';
+  document.getElementById('so-edit-id').value=id;
+  document.getElementById('so-date').value=s.date||'';
+  ['plat','type','obj'].forEach(k=>document.getElementById('so-'+k).value=s[{plat:'platform',type:'type',obj:'objective'}[k]]||'');
+  document.getElementById('so-name').value=s.name||'';
+  document.getElementById('so-amt').value=s.amount||'';
+  document.getElementById('so-imp').value=s.impressions||'';
+  document.getElementById('so-reach').value=s.reach||'';
+  document.getElementById('so-eng').value=s.engagements||'';
+  document.getElementById('so-leads').value=s.leads||'';
+  document.getElementById('so-rev').value=s.revenue||'';
+  document.getElementById('so-fol').value=s.new_followers||'';
+  document.getElementById('so-likes').value=s.new_page_likes||'';
+  document.getElementById('so-ctr').value=s.ctr||'';
+  document.getElementById('so-notes').value=s.notes||'';
+}
+async function delSoc(id){
   if(!confirm('Delete?'))return;
   showLoader('Deleting...');
-  try{await DB.remove('SOCIAL_SPENDS',id);const r=await DB.getAll();D=r;renderTabs();render();toast('Deleted.');}
-  catch(e){toast('Failed: '+e.message,'e');}
+  try{await DB.deleteSocial(id);socials=await DB.getSocials(FY);renderTabs();render();toast('Deleted.');}
+  catch(e){toast('Failed: '+e.message,'error');}
   hideLoader();
 }
-
-// Page metrics
-function setupMetricModal(){
-  document.getElementById('pm-mo').innerHTML=FY_MONTHS.map((m,i)=>`<option value="${i}" ${i===cm?'selected':''}>${fyLabel(i)}</option>`).join('');
-}
-function editMetric(id){
-  const m=(D.pageMetrics||[]).find(x=>x.id==id);if(!m)return;
-  setupMetricModal();
-  document.getElementById('pm-t').textContent='Edit Page Metrics';
-  document.getElementById('pm-save').textContent='Update';
-  document.getElementById('pm-id').value=id;
-  document.getElementById('pm-mo').value=m.fy_month;
-  document.getElementById('pm-plat').value=m.platform||'Instagram';
-  document.getElementById('pm-fs').value=m.followers_start||'';
-  document.getElementById('pm-fe').value=m.followers_end||'';
-  document.getElementById('pm-pl').value=m.page_likes||'';
-  document.getElementById('pm-er').value=m.engagement_rate||'';
-  document.getElementById('pm-notes').value=m.notes||'';
-  openM('m-metrics');
-}
-document.getElementById('m-metrics').addEventListener('click',function(e){if(e.target===this)closeM('m-metrics');});
-document.getElementById('m-camp').addEventListener('click',function(e){if(e.target===this)closeM('m-camp');});
-
-// Override openM for metrics to also setup dropdown
-const origOpenM = openM;
-document.querySelector('[onclick="openM(\'m-metrics\')"]')?.addEventListener('click',()=>{
-  setupMetricModal();
-  document.getElementById('pm-t').textContent='Add Monthly Page Metrics';
-  document.getElementById('pm-save').textContent='Save Metrics';
-  document.getElementById('pm-id').value='';
-  ['pm-fs','pm-fe','pm-pl','pm-er'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('pm-notes').value='';
-});
 
 async function saveMetrics(){
-  const eid=document.getElementById('pm-id').value;
-  const p={fy:FY,fy_month:parseInt(document.getElementById('pm-mo').value),platform:document.getElementById('pm-plat').value,followers_start:parseInt(document.getElementById('pm-fs').value)||0,followers_end:parseInt(document.getElementById('pm-fe').value)||0,page_likes:parseInt(document.getElementById('pm-pl').value)||0,engagement_rate:parseFloat(document.getElementById('pm-er').value)||0,notes:document.getElementById('pm-notes').value};
+  const editId=document.getElementById('met-edit-id').value;
+  const fm=parseInt(document.getElementById('met-mo').value);
+  const p={fy_month:fm,fy:FY,platform:document.getElementById('met-plat').value,followers_start:parseInt(document.getElementById('met-fol-s').value)||0,followers_end:parseInt(document.getElementById('met-fol-e').value)||0,page_likes:parseInt(document.getElementById('met-pl').value)||0,engagement_rate:parseFloat(document.getElementById('met-er').value)||0,notes:document.getElementById('met-notes').value};
   showLoader('Saving...');
   try{
-    if(eid)await DB.update('PAGE_METRICS',eid,p);else await DB.add('PAGE_METRICS',p);
-    const r=await DB.getAll();D=r;closeM('m-metrics');render();toast(eid?'Updated!':'Metrics saved!');
-  }catch(e){toast('Failed: '+e.message,'e');}
+    if(editId)await SB.patch('page_metrics',p,`?id=eq.${editId}`);
+    else await SB.post('page_metrics',p);
+    pageMetrics=await SB.get('page_metrics','?fy=eq.'+FY+'&order=fy_month.asc');
+    closeModal('m-metrics');render();toast('Metrics saved!');
+  }catch(e){toast('Failed: '+e.message,'error');}
   hideLoader();
+}
+function editMetric(id){
+  const m=pageMetrics.find(x=>x.id===id);if(!m)return;
+  openModal('m-metrics');
+  document.getElementById('met-modal-title').textContent='Edit Metrics';
+  document.getElementById('save-met-btn').textContent='Update';
+  document.getElementById('met-edit-id').value=id;
+  document.getElementById('met-mo').innerHTML=FY_MONTHS.map((mn,i)=>`<option value="${i}" ${i===m.fy_month?'selected':''}>${fyMonthLabel(i,FY)}</option>`).join('');
+  document.getElementById('met-plat').value=m.platform||'Instagram';
+  document.getElementById('met-fol-s').value=m.followers_start||'';
+  document.getElementById('met-fol-e').value=m.followers_end||'';
+  document.getElementById('met-pl').value=m.page_likes||'';
+  document.getElementById('met-er').value=m.engagement_rate||'';
+  document.getElementById('met-notes').value=m.notes||'';
 }
 async function delMetric(id){
   if(!confirm('Delete?'))return;
   showLoader('Deleting...');
-  try{await DB.remove('PAGE_METRICS',id);const r=await DB.getAll();D=r;render();toast('Deleted.');}
-  catch(e){toast('Failed: '+e.message,'e');}
+  try{await SB.delete('page_metrics',`?id=eq.${id}`);pageMetrics=await SB.get('page_metrics','?fy=eq.'+FY+'&order=fy_month.asc');render();toast('Deleted.');}
+  catch(e){toast('Failed: '+e.message,'error');}
   hideLoader();
 }
 
-load();
+loadAll();
 </script>
 </body>
 </html>

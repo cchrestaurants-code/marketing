@@ -134,14 +134,14 @@
       <div class="modal-section">
         <div class="modal-section-title">📊 Performance Metrics</div>
         <div class="fg3">
-          <div class="fr"><label>Reach</label><input type="number" id="p-reach" placeholder="0"></div>
+          <div class="fr"><label>Reach</label><input type="number" id="p-reach" oninput="calcER()" placeholder="0"></div>
           <div class="fr"><label>Impressions</label><input type="number" id="p-impr" placeholder="0"></div>
-          <div class="fr"><label>Likes</label><input type="number" id="p-likes" placeholder="0"></div>
+          <div class="fr"><label>Likes</label><input type="number" id="p-likes" oninput="calcER()" placeholder="0"></div>
         </div>
         <div class="fg3">
-          <div class="fr"><label>Comments</label><input type="number" id="p-comments" placeholder="0"></div>
-          <div class="fr"><label>Shares</label><input type="number" id="p-shares" placeholder="0"></div>
-          <div class="fr"><label>Saves</label><input type="number" id="p-saves" placeholder="0"></div>
+          <div class="fr"><label>Comments</label><input type="number" id="p-comments" oninput="calcER()" placeholder="0"></div>
+          <div class="fr"><label>Shares</label><input type="number" id="p-shares" oninput="calcER()" placeholder="0"></div>
+          <div class="fr"><label>Saves</label><input type="number" id="p-saves" oninput="calcER()" placeholder="0"></div>
         </div>
         <div class="fg">
           <div class="fr"><label>Engagement Rate % <span style="font-size:9.5px;color:var(--text-3)">(auto-calculated or enter manually)</span></label>
@@ -339,16 +339,16 @@ function editPerf(id){
   document.getElementById('p-er').value=p.engagement_rate||'';document.getElementById('p-url').value=p.post_url||'';
   document.getElementById('p-notes').value=p.notes||'';openM('m-perf');
 }
-function calcER(){
+function calcER(silent){
   const reach=parseFloat(document.getElementById('p-reach').value)||0;
   const likes=parseFloat(document.getElementById('p-likes').value)||0;
   const comments=parseFloat(document.getElementById('p-comments').value)||0;
   const shares=parseFloat(document.getElementById('p-shares').value)||0;
   const saves=parseFloat(document.getElementById('p-saves').value)||0;
-  if(!reach){toast('Enter reach first.','i');return;}
+  if(!reach) return;
   const er=((likes+comments+shares+saves)/reach*100).toFixed(2);
   document.getElementById('p-er').value=er;
-  toast('Engagement rate: '+er+'%');
+  if(!silent) toast('Engagement rate: '+er+'%');
 }
 async function savePerf(){
   const eid=document.getElementById('p-id').value;
